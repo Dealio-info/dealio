@@ -60,6 +60,19 @@ UI in the MVP; platform staff onboards businesses with a seed script.
 - **Tests first.** Write the failing test, then the implementation. Unit tests for pure logic and
   service rules; integration tests against a real throwaway Postgres for anything touching the
   database. The rules worth testing hardest are permissions, lifecycle transitions and currency.
+- **UI components are shadcn/ui**, in `src/components/ui/`. Add them with
+  `npx shadcn@latest add <name>` rather than hand-writing them; once added they are ordinary
+  project files you may edit. The CLI emits unformatted code, so run `npm run format` after
+  adding one or `format:check` will fail in CI.
+- **Class merging** uses `cn` — import from `cn` directly (as the generated components do) or via
+  the `@/lib/utils` alias. It replaces `clsx` + `tailwind-merge`; don't add those back.
+- **Use shadcn's semantic tokens** (`bg-background`, `text-foreground`, `bg-primary`) for UI
+  chrome, and the `brand-` tokens in `globals.css` (`bg-brand-green`) for brand surfaces. Never
+  declare an un-namespaced `--color-*` that shadcn also defines — its `@theme inline` block comes
+  later in the file and will silently win.
+- **Dark mode is class-based** (`.dark`, via `@custom-variant dark`). Do not add
+  `prefers-color-scheme` rules; they compete with it. And keep `body` colors inside
+  `@layer base` — an unlayered `body` rule overrides layered ones and breaks shadcn theming.
 - **Currency name** lives only in `src/lib/currency.ts`. Never hardcode "coin" anywhere else —
   the name is not final.
 - **Money and currency amounts are integers.** No floats.
@@ -83,8 +96,8 @@ and outcome handlers use deterministic event IDs so retries are safe.
 
 ## Current state
 
-Scaffold only. Next.js 16 + React 19 + TypeScript + Tailwind 4, Vitest 5, ESLint 9 (flat config)
-with the database boundary, and Prisma 7 with no models yet.
+Scaffold only. Next.js 16 + React 19 + TypeScript + Tailwind 4, shadcn/ui on Base UI, Vitest 5,
+ESLint 9 (flat config) with the database boundary, and Prisma 7 with no models yet.
 
 Prisma 7 specifics worth knowing: the connection URL lives in `prisma.config.ts` rather than in
 `schema.prisma`; the client is generated into `src/generated/prisma` (gitignored) instead of

@@ -30,14 +30,15 @@ fulfills its own prizes, so Dealio's revenue is purely the software subscription
 
 ## Stack
 
-| Layer     | Choice                                             |
-| --------- | -------------------------------------------------- |
-| Framework | Next.js (App Router) + TypeScript, strict          |
-| Database  | Postgres via Prisma                                |
-| Auth      | Supabase Auth — magic link, password, Google       |
-| Styling   | Tailwind CSS v4                                    |
-| Tests     | Vitest, unit + integration against a real Postgres |
-| Hosting   | Vercel, with Supabase and Resend                   |
+| Layer         | Choice                                                                 |
+| ------------- | ---------------------------------------------------------------------- |
+| Framework     | Next.js 16 (App Router) + React 19 + TypeScript, strict                |
+| Database      | Postgres via Prisma 7 (driver adapter; URL in `prisma.config.ts`)      |
+| Auth          | Supabase Auth — magic link, password, Google                           |
+| Styling       | Tailwind CSS v4                                                        |
+| UI components | shadcn/ui (`base-vega` style, on Base UI), with `cn` for class merging |
+| Tests         | Vitest, unit + integration against a real Postgres                     |
+| Hosting       | Vercel, with Supabase and Resend                                       |
 
 ## Getting started
 
@@ -71,6 +72,7 @@ prisma.config.ts          Prisma CLI config; holds the connection URL (Prisma 7)
 prisma/schema.prisma      Database schema (models land in Task 2)
 src/
   app/                    Next.js App Router
+  components/ui/          shadcn/ui components (added via CLI, then yours to edit)
   server/
     db.ts                 The only Prisma instance
     services/             All business rules; every function takes a TenantContext
