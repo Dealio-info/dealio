@@ -96,8 +96,11 @@ and outcome handlers use deterministic event IDs so retries are safe.
 
 ## Current state
 
-Scaffold only. Next.js 16 + React 19 + TypeScript + Tailwind 4, shadcn/ui on Base UI, Vitest 5,
-ESLint 9 (flat config) with the database boundary, and Prisma 7 with no models yet.
+Next.js 16 + React 19 + TypeScript + Tailwind 4, shadcn/ui on Base UI, Vitest 5, ESLint 9 (flat
+config) with the database boundary, and Prisma 7 with the full domain schema migrated.
+
+**Through Task 2.** There are no services, no auth and no UI beyond a placeholder page — that is
+Task 3 onward. Nothing reads or writes the database yet outside the test harness.
 
 Prisma 7 specifics worth knowing: the connection URL lives in `prisma.config.ts` rather than in
 `schema.prisma`; the client is generated into `src/generated/prisma` (gitignored) instead of
