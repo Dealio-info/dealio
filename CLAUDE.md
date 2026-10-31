@@ -16,9 +16,16 @@ file serves.
 
 The Prisma client is importable only from `src/server/db.ts` and `src/server/services/**` —
 that covers the generated client in `src/generated/prisma`, the `@prisma/client` package and the
-`@prisma/adapter-pg` driver adapter. Enforced by `no-restricted-imports` in `eslint.config.mjs`,
-not by convention. Pages, components,
-route handlers and server actions call a service function that takes a `TenantContext`.
+`@prisma/adapter-pg` driver adapter. Enforced by `@typescript-eslint/no-restricted-imports` in
+`eslint.config.mjs`, not by convention, and covered by tests in
+`src/server/boundary.test.ts` rather than checked by hand. Pages, components, route handlers and
+server actions call a service function instead.
+
+**Type-only imports are exempt.** `import type { OpportunityStatus } from "@/generated/prisma/enums"`
+is fine anywhere: types are erased at compile time, cannot reach the database, and sharing them
+stops those unions being hand-duplicated and drifting from the schema. A _value_ import of the same
+module is still blocked — Prisma generates a runtime const beside each enum type, and that is where
+the line sits.
 
 Multi-tenant isolation is enforced in the service layer rather than by row-level security. That
 choice is only sound while this rule holds, so **do not relax the lint rule to unblock a
@@ -76,6 +83,21 @@ UI in the MVP; platform staff onboards businesses with a seed script.
 - **Currency name** lives only in `src/lib/currency.ts`. Never hardcode "coin" anywhere else —
   the name is not final.
 - **Money and currency amounts are integers.** No floats.
+- **Service signature** is `fn(ctx: ServiceContext, input)`, where `ServiceContext` is
+  `{ db, actor }` from `src/server/context.ts`. The database handle is explicit, not the `prisma`
+  singleton, so a service can be composed into a caller's transaction —
+  `prisma.$transaction((tx) => doThing({ db: tx, actor }, input))`. Invariant 1 depends on that: a
+  currency movement and the ledger row recording it must be atomic. `actor` is a `TenantContext`,
+  so it always carries a `businessId`; scope every query by `actor.businessId` and never take a
+  business id from the caller's input.
+- **Authority decisions live in `src/server/context.ts`** and are pure: `assertBusinessAdmin`,
+  `assertSameBusiness`, `canPublishOpportunity`, `canRewardOpportunity`. Use them rather than
+  re-deriving a role check. `ApprovalPolicy` is branded so the only way to obtain one is
+  `approvalPolicyFromBusiness(business)` — which is how invariant 4 stays honest.
+- **Identity is a set, not a single actor.** `resolveIdentity` returns every business a user is
+  staff of or an advocate for; the caller names the business it means via `businessActor` /
+  `advocateActor`, or uses `soleTenantContext`, which refuses rather than guessing when the user
+  belongs to more than one. Never collapse that to a "current" business implicitly.
 - **Validate at the boundary** with Zod in the route handler or server action; services may then
   trust their inputs' shape, though never their authority.
 - **Schema changes** are Prisma migrations, committed. Never edit an applied migration.
@@ -99,8 +121,13 @@ and outcome handlers use deterministic event IDs so retries are safe.
 Next.js 16 + React 19 + TypeScript + Tailwind 4, shadcn/ui on Base UI, Vitest 5, ESLint 9 (flat
 config) with the database boundary, and Prisma 7 with the full domain schema migrated.
 
-**Through Task 2.** There are no services, no auth and no UI beyond a placeholder page — that is
-Task 3 onward. Nothing reads or writes the database yet outside the test harness.
+**Through Task 3.** The schema is migrated, and the tenant context, authority helpers and
+database-import boundary are in place and tested. There is no auth yet (Task 4) and no UI beyond a
+placeholder page, so nothing calls a service from a route yet.
+
+Known upstream noise: the integration suite prints a `pg` deprecation warning about overlapping
+queries on one client. It comes from inside `@prisma/adapter-pg`'s transaction handling, not from
+our code — do not chase it. It is a reason to keep `pg` pinned to `^8`.
 
 Prisma 7 specifics worth knowing: the connection URL lives in `prisma.config.ts` rather than in
 `schema.prisma`; the client is generated into `src/generated/prisma` (gitignored) instead of

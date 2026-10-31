@@ -167,6 +167,22 @@ Notes for when this is implemented — recorded now so they are not rediscovered
 
 ## Log
 
+**2026-10-31 — Task 3: tenant context and the service boundary.**
+`src/server/context.ts` holds the actor model and all authority decisions, pure and exhaustively
+tested. Two deliberate divergences from the original plan, both recorded because they are
+load-bearing. First, services take `{ db, actor }` rather than a bare `TenantContext`: invariant 1
+requires a currency movement and its ledger row to be atomic, so a service has to be composable
+into a caller's transaction, which a service closing over the `prisma` singleton could not be.
+Second, `resolveIdentity` returns every business a user belongs to rather than one resolved actor —
+a person can be a rep at one business and an advocate of another, and silently picking a "current"
+business is exactly the cross-tenant bug this design exists to prevent; `soleTenantContext` refuses
+when the choice is ambiguous.
+
+The database-import boundary moved to the typescript-eslint rule so type-only imports can be
+exempted, which lets the UI share domain enums instead of hand-duplicating them while keeping the
+runtime client unreachable. It is now covered by `src/server/boundary.test.ts` — twelve cases
+asserting both directions — rather than verified by hand.
+
 **2026-10-31 — Task 2: schema and integration harness.**
 Full domain schema migrated: `User`, `PlatformStaff`, `Business`, `Membership`, `Advocate`,
 `AdvocateInvite`, `Opportunity`, `OpportunityEvent`, `LedgerEntry`, `Reward`, `Redemption`.
