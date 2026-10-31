@@ -107,8 +107,6 @@ Prisma 7 specifics worth knowing: the connection URL lives in `prisma.config.ts`
 `node_modules`; and the runtime connects through the `@prisma/adapter-pg` driver adapter. Run
 `npm run db:generate` after changing the schema — `postinstall` does it on a fresh install.
 
-**Task 2 is done**: the full domain schema is migrated and an integration-test harness runs
-against a real Postgres. No services or UI exist yet — that is Task 3 onward.
 `docs/decisions.md` tracks what is settled and what is open.
 
 ### Invariants the database enforces

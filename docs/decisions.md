@@ -79,31 +79,68 @@ organization**, and Dealio issues payouts against that organization's balance. T
 belongs to the business and Dealio never sees it. Tremendous describes this as the platform
 "completely removing itself from handling the customer's money", which is the property we want.
 
-The connection is **OAuth 2.0**, not a pasted API key — Tremendous supports OAuth specifically for
-platforms sending rewards on behalf of other accounts, and recommends it over API-key connections.
-Under their "Tremendous for Platforms" model the customer organization is onboarded and approved
-first, and the platform then receives an OAuth token tied to that customer.
+The mechanism is **Tremendous Connect** (also called Tremendous for Platforms), not plain OAuth and
+not a pasted API key. Confirmed against the live docs: _"Customers fund their own balances and
+manage their own payment methods. The platform does not hold the funds."_
 
-Note this was verified from search-result summaries of Tremendous's developer docs, not by reading
-them directly — `developers.tremendous.com` is outside this session's allowed network domains.
-Confirm the current flow against the live docs and the sandbox before building.
+### How the connection works
 
-Consequences of the OAuth-per-business decision:
+Dealio drives the onboarding rather than telling the business to go sign up:
 
-- **A connection record per business**, holding the access token, refresh token, expiry and the
-  Tremendous organization id. These are the first genuinely sensitive secrets Dealio stores:
-  encrypted at rest, never logged, never `NEXT_PUBLIC_`, never sent to the browser. A leaked token
-  can spend a customer's money.
-- **Connections have states**, because Tremendous reviews an organization before approving it. A
-  business can be connected-but-pending, so the UI needs to say so rather than failing a redemption
-  with a vague error.
-- **Token refresh** is a background concern. An expired token must not surface as a failed
-  redemption.
-- **Onboarding gains a step**: connect your Tremendous account. Until it is connected, a business
-  can still run opportunities and accrue currency — only fulfillment is blocked. Worth keeping
-  those independent so a pilot can start before the Tremendous paperwork clears.
-- **Insufficient balance is the business's to resolve**, not Dealio's. Surface it to the admin
-  clearly and hold the redemption rather than failing it outright.
+1. Dealio creates a **connected organization** for the business via the API, optionally prefilling
+   KYB details, then a **connected organization member** for the individual user (email + name).
+2. Dealio requests a **session URL** for that user with a `return_url`. Session URLs are temporary
+   — generate a fresh one each time rather than storing it.
+3. The business completes onboarding on Tremendous: business information for compliance review,
+   accepting terms, and adding a payment method to fund its own balance.
+4. Tremendous' compliance team reviews the organization. It can be rejected.
+
+The flow is **webhook-driven**, with four events that map directly onto the connection states
+Dealio needs to model:
+
+| Webhook                                   | Meaning                                                       |
+| ----------------------------------------- | ------------------------------------------------------------- |
+| `CONNECTED_ORGANIZATIONS.REGISTERED`      | The user finished onboarding                                  |
+| `CONNECTED_ORGANIZATIONS.STATUS.APPROVED` | Compliance approved the organization                          |
+| `CONNECTED_ORGANIZATIONS.OAUTH.GRANTED`   | Carries the `oauth_code`. **Wait for this before continuing** |
+| `CONNECTED_ORGANIZATIONS.STATUS.REJECTED` | Compliance rejected it                                        |
+
+Dealio exchanges the `oauth_code` for access and refresh tokens, then calls the API on the
+business's behalf.
+
+### Three details worth knowing before building
+
+- **Refresh tokens never expire but are single-use.** Each refresh returns a _new_ refresh token
+  that must replace the stored one. This is a genuine hazard: lose the new token — a crash between
+  the HTTP response and the database write — and the connection is dead, with the customer having
+  to re-onboard. Persist the new token before relying on the new access token, and treat the
+  refresh as a critical section rather than an incidental retry.
+- **`default` scope is sufficient**, so ask for nothing more. It covers campaigns, fields, funding
+  sources, invoices, orders and products in full, plus read-only organizations and members. We do
+  not need `team_management` or `fraud_prevention`.
+- **The docs give a production authorize host (`api.tremendous.com/oauth/authorize`) but only show
+  the testflight host for token exchange.** Confirm the production token endpoint against the
+  sandbox before going live rather than assuming it mirrors the authorize host.
+
+Optional later: Tremendous can top up a customer balance via the API using their saved payment
+method. Balances default to USD and support EUR, GBP and CAD; rewards can be sent in other
+currencies, converted at the current rate.
+
+### Consequences for Dealio
+
+- **A connection record per business**, holding the access token, the current refresh token, expiry
+  and the Tremendous organization id. These are the first genuinely sensitive secrets Dealio
+  stores: encrypted at rest, never logged, never `NEXT_PUBLIC_`, never sent to the browser. A
+  leaked token can spend a customer's money.
+- **Connection states follow the webhooks above**, so a business can be registered-but-unapproved
+  or approved-but-not-yet-granted. The UI should say which, rather than failing a redemption with a
+  vague error.
+- **Token refresh is a background concern**, and must never surface as a failed redemption.
+- **Onboarding gains a step.** Until a business is connected, it can still run opportunities and
+  accrue currency — only fulfillment is blocked. Keeping those independent lets a pilot start
+  before the Tremendous compliance review clears, which is a dependency on another company.
+- **Insufficient balance is the business's to resolve**, not Dealio's. Surface it to the admin and
+  hold the redemption rather than failing it outright.
 
 Notes for when this is implemented — recorded now so they are not rediscovered:
 
@@ -121,9 +158,10 @@ Notes for when this is implemented — recorded now so they are not rediscovered
   prototype's convention of deterministic event ids for retry-safe writes.
 - **Environments.** Sandbox and production differ by base URL and key. The key is server-side only
   and must never be `NEXT_PUBLIC_`. Add both to `.env.example` when the work starts.
-- **Catalog.** Tremendous decides what rewards are actually orderable, so the per-business catalog
-  needs to reference Tremendous products rather than free text. Worth checking against the
-  `Reward` model before Task 2 freezes it.
+- **Catalog.** Tremendous decides what is orderable, so the per-business catalog should reference
+  Tremendous products rather than free text. `Reward.tremendousProductId` is in place for this;
+  whether `name`/`description` should be derived from the Tremendous product rather than typed by
+  an admin is still open.
 - **Failure with real cost.** Insufficient funds in the funding account is a normal operating
   condition, not an edge case. It needs a clear path for both the advocate and the admin.
 
