@@ -4,7 +4,7 @@
 
 The ground-up rebuild of Dealio, a customer advocacy platform for B2B SaaS sales teams. Reps
 post advocacy opportunities; the company's customers ("advocates") complete them, earn a virtual
-currency, and redeem it for prizes the company fulfills.
+currency, and redeem it for rewards fulfilled through the Tremendous API.
 
 Two audiences: the **business side** (business admins and reps) and the **advocates**. They are
 different people with different permissions, and the layout should always make clear which one a

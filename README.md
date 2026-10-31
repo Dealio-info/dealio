@@ -25,8 +25,10 @@ sees influenced revenue.
 Activity lifecycle: **requested → accepted → completed → verified → rewarded**, with `declined`
 and `cancelled` as exits.
 
-**Dealio never holds customer money.** Each company configures its own prize catalog and
-fulfills its own prizes, so Dealio's revenue is purely the software subscription.
+Redemptions are fulfilled through the [Tremendous](https://www.tremendous.com) API. Whether the
+funding account belongs to Dealio or to each customer company is **not yet decided**, and it
+determines whether Dealio ever holds customer funds — see
+[`docs/decisions.md`](docs/decisions.md).
 
 ## Stack
 
