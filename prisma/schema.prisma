@@ -1,0 +1,28 @@
+// Dealio schema.
+//
+// Intentionally empty of models. The full domain schema — Business, User,
+// Membership, PlatformStaff, Advocate, AdvocateInvite, Opportunity,
+// OpportunityEvent, LedgerEntry, Reward, Redemption — lands in Task 2,
+// together with the integration-test database harness.
+//
+// Two rules for this file, both load-bearing:
+//
+//  1. Every tenant-scoped model carries `businessId`. There is no global
+//     data except `User` and `PlatformStaff`.
+//  2. `LedgerEntry` is append-only. No service may ever expose an update or
+//     delete against it, and an advocate's balance is the sum of its rows
+//     rather than a stored column. See CLAUDE.md.
+//
+// Prisma 7 notes: the connection URL lives in `prisma.config.ts`, not here,
+// and the client is generated into `src/generated/prisma` (gitignored) rather
+// than into `node_modules/@prisma/client`. Import it only via
+// `src/server/db.ts`.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}

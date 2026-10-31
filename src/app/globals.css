@@ -1,0 +1,28 @@
+@import "tailwindcss";
+
+/*
+ * Brand direction from the product brief, not final: deep navy / near-black,
+ * vibrant green, off-white. Defined as tokens so settling the palette later is
+ * a change in one place.
+ */
+@theme {
+  --color-ink: #0b1220;
+  --color-accent: #16c172;
+  --color-paper: #f7f7f5;
+}
+
+:root {
+  color-scheme: light dark;
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+}
+
+@media (prefers-color-scheme: dark) {
+  body {
+    background: var(--color-ink);
+    color: var(--color-paper);
+  }
+}

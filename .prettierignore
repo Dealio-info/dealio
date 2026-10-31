@@ -1,0 +1,8 @@
+.next
+node_modules
+coverage
+src/generated
+package-lock.json
+
+# Next rewrites this on every build; let it own the formatting.
+tsconfig.json
