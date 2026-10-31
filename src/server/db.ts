@@ -1,3 +1,9 @@
+// Closes a gap the lint boundary cannot see. The ESLint rule blocks importing
+// the Prisma client directly, but nothing stopped a client component importing
+// *this* module and pulling the client into the browser bundle. `server-only`
+// makes that a build error with a clear message.
+import "server-only";
+
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@/generated/prisma/client";
 import type { Prisma } from "@/generated/prisma/client";

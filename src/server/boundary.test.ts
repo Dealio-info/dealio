@@ -93,3 +93,18 @@ describe("type-only imports are permitted anywhere", () => {
     expect(errors.length).toBeGreaterThan(0);
   });
 });
+
+describe("server-only guard", () => {
+  // The lint rule blocks importing the Prisma client, but nothing stopped a
+  // client component importing `@/server/db` and pulling the client into the
+  // browser bundle — the rule cannot see that. `server-only` turns it into a
+  // build error. This asserts the marker stays put.
+  it.each(["src/server/db.ts", "src/server/auth.ts", "src/server/supabase.ts"])(
+    "%s is marked server-only",
+    async (file) => {
+      const { readFile } = await import("node:fs/promises");
+      const source = await readFile(file, "utf8");
+      expect(source).toMatch(/^import "server-only";$/m);
+    },
+  );
+});

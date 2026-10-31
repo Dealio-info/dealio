@@ -121,9 +121,24 @@ and outcome handlers use deterministic event IDs so retries are safe.
 Next.js 16 + React 19 + TypeScript + Tailwind 4, shadcn/ui on Base UI, Vitest 5, ESLint 9 (flat
 config) with the database boundary, and Prisma 7 with the full domain schema migrated.
 
-**Through Task 3.** The schema is migrated, and the tenant context, authority helpers and
-database-import boundary are in place and tested. There is no auth yet (Task 4) and no UI beyond a
-placeholder page, so nothing calls a service from a route yet.
+**Through Task 4, pending credentials.** Schema, tenant context, authority helpers, the
+database-import boundary, and Supabase auth wiring are all in place: `src/server/auth.ts` bridges a
+session to a domain `Identity`, `src/middleware.ts` refreshes the session and gates `/app` and
+`/advocate`, `/auth/callback` exchanges the code, and `/sign-in` offers magic link, password and
+Google. The flow has **not been exercised end to end** — that needs real Supabase credentials.
+
+Two things to know about auth:
+
+- Use `getUser()`, never `getSession()`, for any authorization decision. `getSession()` trusts the
+  cookie; `getUser()` validates the token with Supabase.
+- The middleware checks only "is there a session". It deliberately does **not** check roles, because
+  that needs the database and middleware must stay free of Prisma. It is a convenience redirect, not
+  a security boundary — the service layer is the boundary.
+
+`src/server/db.ts`, `auth.ts` and `supabase.ts` carry `import "server-only"`. That closes a gap the
+lint rule cannot see: the rule blocks importing the Prisma client, but nothing stopped a client
+component importing `@/server/db` and pulling the client into the browser bundle. Keep the marker on
+any new module under `src/server/`.
 
 Known upstream noise: the integration suite prints a `pg` deprecation warning about overlapping
 queries on one client. It comes from inside `@prisma/adapter-pg`'s transaction handling, not from

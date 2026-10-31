@@ -69,6 +69,16 @@ npm run dev           # http://localhost:3000
 | `npm run test:integration` | Integration tests against a real Postgres      |
 | `npm run test:all`         | Unit then integration                          |
 
+### Auth
+
+Sign-in is Supabase Auth: magic link by default, with password and Google. Magic link leads because
+advocates sign in rarely, and a password set once and forgotten is friction that costs
+participation.
+
+`src/middleware.ts` refreshes the session and keeps signed-out visitors out of `/app` and
+`/advocate`. It checks only for a session, not roles — roles need the database, and middleware
+cannot reach it. Treat it as a convenience redirect; the service layer is the security boundary.
+
 CI runs format, lint, typecheck, unit tests, integration tests and build on every push.
 
 ### Integration tests
