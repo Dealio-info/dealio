@@ -54,24 +54,43 @@ npm run dev           # http://localhost:3000
 
 ### Scripts
 
-| Script                | What it does                                   |
-| --------------------- | ---------------------------------------------- |
-| `npm run dev`         | Dev server                                     |
-| `npm run build`       | Production build                               |
-| `npm run lint`        | ESLint, including the database-import boundary |
-| `npm run typecheck`   | `tsc --noEmit`                                 |
-| `npm test`            | Vitest once                                    |
-| `npm run test:watch`  | Vitest in watch mode                           |
-| `npm run format`      | Prettier write                                 |
-| `npm run db:generate` | Regenerate the Prisma client                   |
+| Script                     | What it does                                   |
+| -------------------------- | ---------------------------------------------- |
+| `npm run dev`              | Dev server                                     |
+| `npm run build`            | Production build                               |
+| `npm run lint`             | ESLint, including the database-import boundary |
+| `npm run typecheck`        | `tsc --noEmit`                                 |
+| `npm test`                 | Vitest once                                    |
+| `npm run test:watch`       | Vitest in watch mode                           |
+| `npm run format`           | Prettier write                                 |
+| `npm run db:generate`      | Regenerate the Prisma client                   |
+| `npm run db:migrate`       | Create and apply a migration in development    |
+| `npm run db:deploy`        | Apply committed migrations (CI and production) |
+| `npm run test:integration` | Integration tests against a real Postgres      |
+| `npm run test:all`         | Unit then integration                          |
 
-CI runs format, lint, typecheck, test and build on every push.
+CI runs format, lint, typecheck, unit tests, integration tests and build on every push.
+
+### Integration tests
+
+`npm test` is pure unit tests and needs no database. `npm run test:integration` needs a real
+Postgres, because the invariants most worth testing live in the database — the append-only ledger
+trigger, the check constraints, and the idempotency unique indexes. A mock would prove nothing
+about them.
+
+Point `TEST_DATABASE_URL` at a throwaway database; the suite creates it if missing, applies the
+committed migrations, and truncates every table between tests. It must differ from `DATABASE_URL`,
+and the harness refuses to run if they match.
+
+Any Postgres will do — `npx prisma dev`, Docker (`docker run --rm -p 5432:5432 -e
+POSTGRES_PASSWORD=postgres postgres:16`), or a local install.
 
 ## Layout
 
 ```
 prisma.config.ts          Prisma CLI config; holds the connection URL (Prisma 7)
-prisma/schema.prisma      Database schema (models land in Task 2)
+prisma/schema.prisma      Database schema
+prisma/migrations/        Committed migration history
 src/
   app/                    Next.js App Router
   components/ui/          shadcn/ui components (added via CLI, then yours to edit)
@@ -80,6 +99,7 @@ src/
     services/             All business rules; every function takes a TenantContext
   lib/                    Shared pure helpers (currency name lives here)
   test/                   Test setup
+    integration/          Integration harness, fixtures and schema tests
 docs/
   decisions.md            Running record of decisions and open questions
   prototype-assessment.md Why this is a rebuild, and what the prototype is good for

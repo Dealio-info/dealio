@@ -73,8 +73,18 @@ export default tseslint.config(
     },
   },
   {
-    // The only two places allowed to reach the database.
-    files: ["src/server/db.ts", "src/server/services/**/*.ts"],
+    // The only places allowed to reach the database.
+    //
+    // `src/test/integration/**` is here because the harness must construct its
+    // own client against the throwaway test database. Test code never ships to
+    // the browser, so this does not weaken the rule it is exempt from — but
+    // service tests should still go through service functions rather than
+    // reaching past them with the harness client.
+    files: [
+      "src/server/db.ts",
+      "src/server/services/**/*.ts",
+      "src/test/integration/**/*.ts",
+    ],
     rules: {
       "no-restricted-imports": "off",
     },

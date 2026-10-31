@@ -102,5 +102,36 @@ ESLint 9 (flat config) with the database boundary, and Prisma 7 with no models y
 Prisma 7 specifics worth knowing: the connection URL lives in `prisma.config.ts` rather than in
 `schema.prisma`; the client is generated into `src/generated/prisma` (gitignored) instead of
 `node_modules`; and the runtime connects through the `@prisma/adapter-pg` driver adapter. Run
-`npm run db:generate` after changing the schema — `postinstall` does it on a fresh install. The domain schema and the integration-test harness are
-Task 2. `docs/decisions.md` tracks what is settled and what is open.
+`npm run db:generate` after changing the schema — `postinstall` does it on a fresh install.
+
+**Task 2 is done**: the full domain schema is migrated and an integration-test harness runs
+against a real Postgres. No services or UI exist yet — that is Task 3 onward.
+`docs/decisions.md` tracks what is settled and what is open.
+
+### Invariants the database enforces
+
+Several rules from the list above are constraints, not conventions — the prototype relied on
+application discipline for exactly these and lost real money to it:
+
+- A trigger on `ledger_entries` rejects every UPDATE and DELETE. Corrections are appended
+  (`MANUAL_ADJUSTMENT`, or `FULFILLMENT_FAILED` when an external reward order fails), never
+  edited in place. TRUNCATE is deliberately _not_ blocked, so the test harness can reset.
+- `CHECK` constraints: a ledger delta is never zero, a `MANUAL_ADJUSTMENT` requires a note, and
+  reward amounts, reward costs and influenced revenue are non-negative.
+- Unique indexes on `(opportunityId, reason)` and `(redemptionId, reason)` make reward crediting
+  and redemption debiting idempotent in the database, so a retry or a double-click cannot pay
+  twice.
+- `advocates` is unique on `(businessId, email)`, never globally — the same person can advocate
+  for two different customers.
+
+When writing the trigger, do not set `USING ERRCODE` to anything in Postgres's 23xxx
+integrity-constraint class: Prisma translates those into a generic constraint error and the
+message is lost. The default `raise_exception` (P0001) passes through intact.
+
+### Testing layout
+
+`npm test` is unit-only and needs no database. `npm run test:integration` uses
+`vitest.integration.config.ts`, runs files matching `*.integration.test.ts` serially, and needs
+`TEST_DATABASE_URL`. The harness in `src/test/integration/` is the one place outside
+`src/server/**` allowed to construct a Prisma client; service tests should still go through
+service functions rather than reaching past them.

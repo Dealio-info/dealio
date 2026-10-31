@@ -8,9 +8,12 @@ export default defineConfig({
     environment: "jsdom",
     globals: true,
     setupFiles: ["./src/test/setup.ts"],
-    // Unit tests only. Task 2 adds a separate `test:integration` project that
-    // runs against a real throwaway Postgres.
     include: ["src/**/*.{test,spec}.{ts,tsx}"],
+    // Integration tests live in `vitest.integration.config.ts`. They need a
+    // real database and a global setup, and `*.integration.test.ts` also
+    // matches the include pattern above, so exclude them explicitly or
+    // `npm test` tries to load them and fails.
+    exclude: ["**/node_modules/**", "**/dist/**", "**/*.integration.test.ts"],
   },
   resolve: {
     alias: { "@": path.resolve(import.meta.dirname, "./src") },

@@ -99,6 +99,16 @@ Notes for when this is implemented — recorded now so they are not rediscovered
 
 ## Log
 
+**2026-10-31 — Task 2: schema and integration harness.**
+Full domain schema migrated: `User`, `PlatformStaff`, `Business`, `Membership`, `Advocate`,
+`AdvocateInvite`, `Opportunity`, `OpportunityEvent`, `LedgerEntry`, `Reward`, `Redemption`.
+Invariants pushed into the database rather than left to the service layer — an append-only
+trigger on the ledger, check constraints on money and notes, and unique indexes that make reward
+crediting idempotent. Integration harness runs the committed migrations against a real Postgres
+and truncates between tests; 19 tests cover the invariants by trying to violate them directly.
+`Reward.tremendousProductId` and the asynchronous `Redemption` states are in place so Tremendous
+fulfillment is additive rather than a migration. Added a Postgres service to CI.
+
 **2026-10-31 — Rebuild decided and scaffolded.**
 The prototype was reviewed in full before this was chosen, which the brief requires ("before
 recommending a rebuild, establish the current codebase and implementation state"). Findings are in
