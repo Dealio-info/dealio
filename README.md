@@ -25,10 +25,10 @@ sees influenced revenue.
 Activity lifecycle: **requested → accepted → completed → verified → rewarded**, with `declined`
 and `cancelled` as exits.
 
-Redemptions are fulfilled through the [Tremendous](https://www.tremendous.com) API. Whether the
-funding account belongs to Dealio or to each customer company is **not yet decided**, and it
-determines whether Dealio ever holds customer funds — see
-[`docs/decisions.md`](docs/decisions.md).
+Redemptions are fulfilled through the [Tremendous](https://www.tremendous.com) API. **Dealio holds
+no customer float**: each company connects its own Tremendous organization over OAuth, and payouts
+are issued against that company's balance. The payment method belongs to the company and Dealio
+never sees it, so Dealio's revenue is purely the software subscription.
 
 ## Stack
 

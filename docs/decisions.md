@@ -51,29 +51,59 @@ entry exists is so the same question is not answered twice.
 
 ## Open
 
-| Question                                    | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Who owns the Tremendous funding account** | The blocker for reward fulfillment. If Dealio's account is prefunded by customers, Dealio holds customer float — which carries compliance weight and contradicts the earlier "Dealio holds no money" position. If each business connects its own Tremendous account, Dealio only orchestrates and never touches funds. Changes the data model, the pricing story and the liability picture, so it should be settled before implementation |
-| Currency name                               | "Coins" is a placeholder. Wants short, punchy, positive — like _Kudos_, _Zaps_, _Sparks_. Rejected: _Dealios_, _credits_, _points_. Brainstormed: _Props, Pings, Zings, Amp, Glow, Buzz, Pops, Bumps, Snaps, Cheers, Nods, Pips, Dings, Drops_. Isolated to `src/lib/currency.ts`, so renaming is one line                                                                                                                                |
-| Per-activity reward amounts                 | The model supports it — `rewardAmount` is per-opportunity. The question is what the defaults should be                                                                                                                                                                                                                                                                                                                                    |
-| Balance expiration                          | Not built. Needs no schema change later: a negative ledger entry with reason `EXPIRED`                                                                                                                                                                                                                                                                                                                                                    |
-| Duplicate and fraud handling                | Not built. Double-crediting is already prevented by idempotency on `opportunityId`                                                                                                                                                                                                                                                                                                                                                        |
-| Richer reward triggers                      | Whether a qualified lead or closed deal should also trigger a reward. Additive later — new ledger reasons from new lifecycle transitions                                                                                                                                                                                                                                                                                                  |
-| Fuller revenue attribution                  | Referral → pipeline → closed-won, beyond the minimal version                                                                                                                                                                                                                                                                                                                                                                              |
-| Pricing                                     | ~$200/month per AE/AM seat is an unvalidated hypothesis. Tiers, seat definitions and contract structure all open. No billing in the MVP, so this blocks nothing yet                                                                                                                                                                                                                                                                       |
-| Brand                                       | Logo, palette and slogan. Explored but not final: deep navy / near-black, vibrant green, off-white. Tokens are in `src/app/globals.css`                                                                                                                                                                                                                                                                                                   |
-| Initial customer segment                    | Affects go-to-market, not the build                                                                                                                                                                                                                                                                                                                                                                                                       |
-| Competitive positioning                     | Needs real market research                                                                                                                                                                                                                                                                                                                                                                                                                |
-| Rep self-verification default               | Which way a _new_ business should default is settled (require approval), but whether onboarding should present this as one choice or two is a UX call                                                                                                                                                                                                                                                                                     |
+| Question                        | Notes                                                                                                                                                                                                                                                                                                      |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Tremendous platform partnership | Settled _how_ (OAuth per business), but becoming a Tremendous "Platforms" partner looks like a commercial and compliance step with lead time, and their team reviews each customer organization before approval. Worth starting early — it is a dependency on another company, not on us                   |
+| Token encryption approach       | Per-business OAuth tokens are the first genuinely sensitive secret in the system. Envelope encryption with a key from the environment is the likely answer; decide before the connection table is written                                                                                                  |
+| Currency name                   | "Coins" is a placeholder. Wants short, punchy, positive — like _Kudos_, _Zaps_, _Sparks_. Rejected: _Dealios_, _credits_, _points_. Brainstormed: _Props, Pings, Zings, Amp, Glow, Buzz, Pops, Bumps, Snaps, Cheers, Nods, Pips, Dings, Drops_. Isolated to `src/lib/currency.ts`, so renaming is one line |
+| Per-activity reward amounts     | The model supports it — `rewardAmount` is per-opportunity. The question is what the defaults should be                                                                                                                                                                                                     |
+| Balance expiration              | Not built. Needs no schema change later: a negative ledger entry with reason `EXPIRED`                                                                                                                                                                                                                     |
+| Duplicate and fraud handling    | Not built. Double-crediting is already prevented by idempotency on `opportunityId`                                                                                                                                                                                                                         |
+| Richer reward triggers          | Whether a qualified lead or closed deal should also trigger a reward. Additive later — new ledger reasons from new lifecycle transitions                                                                                                                                                                   |
+| Fuller revenue attribution      | Referral → pipeline → closed-won, beyond the minimal version                                                                                                                                                                                                                                               |
+| Pricing                         | ~$200/month per AE/AM seat is an unvalidated hypothesis. Tiers, seat definitions and contract structure all open. No billing in the MVP, so this blocks nothing yet                                                                                                                                        |
+| Brand                           | Logo, palette and slogan. Explored but not final: deep navy / near-black, vibrant green, off-white. Tokens are in `src/app/globals.css`                                                                                                                                                                    |
+| Initial customer segment        | Affects go-to-market, not the build                                                                                                                                                                                                                                                                        |
+| Competitive positioning         | Needs real market research                                                                                                                                                                                                                                                                                 |
+| Rep self-verification default   | Which way a _new_ business should default is settled (require approval), but whether onboarding should present this as one choice or two is a UX call                                                                                                                                                      |
 
 ---
 
 ## Reward fulfillment via Tremendous
 
 Decided: redemptions are fulfilled through the [Tremendous](https://www.tremendous.com) API rather
-than by hand. A sandbox account exists. This supersedes the earlier decision that companies would
-fulfill their own prizes, so the "Dealio never holds customer money" claim is **no longer
-asserted** anywhere until the funding question above is answered.
+than by hand. A sandbox account exists.
+
+**Dealio does not hold customer float.** Each customer business connects its **own Tremendous
+organization**, and Dealio issues payouts against that organization's balance. The payment method
+belongs to the business and Dealio never sees it. Tremendous describes this as the platform
+"completely removing itself from handling the customer's money", which is the property we want.
+
+The connection is **OAuth 2.0**, not a pasted API key — Tremendous supports OAuth specifically for
+platforms sending rewards on behalf of other accounts, and recommends it over API-key connections.
+Under their "Tremendous for Platforms" model the customer organization is onboarded and approved
+first, and the platform then receives an OAuth token tied to that customer.
+
+Note this was verified from search-result summaries of Tremendous's developer docs, not by reading
+them directly — `developers.tremendous.com` is outside this session's allowed network domains.
+Confirm the current flow against the live docs and the sandbox before building.
+
+Consequences of the OAuth-per-business decision:
+
+- **A connection record per business**, holding the access token, refresh token, expiry and the
+  Tremendous organization id. These are the first genuinely sensitive secrets Dealio stores:
+  encrypted at rest, never logged, never `NEXT_PUBLIC_`, never sent to the browser. A leaked token
+  can spend a customer's money.
+- **Connections have states**, because Tremendous reviews an organization before approving it. A
+  business can be connected-but-pending, so the UI needs to say so rather than failing a redemption
+  with a vague error.
+- **Token refresh** is a background concern. An expired token must not surface as a failed
+  redemption.
+- **Onboarding gains a step**: connect your Tremendous account. Until it is connected, a business
+  can still run opportunities and accrue currency — only fulfillment is blocked. Worth keeping
+  those independent so a pilot can start before the Tremendous paperwork clears.
+- **Insufficient balance is the business's to resolve**, not Dealio's. Surface it to the admin
+  clearly and hold the redemption rather than failing it outright.
 
 Notes for when this is implemented — recorded now so they are not rediscovered:
 
