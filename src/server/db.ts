@@ -1,5 +1,12 @@
+// Closes a gap the lint boundary cannot see. The ESLint rule blocks importing
+// the Prisma client directly, but nothing stopped a client component importing
+// *this* module and pulling the client into the browser bundle. `server-only`
+// makes that a build error with a clear message.
+import "server-only";
+
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@/generated/prisma/client";
+import type { Prisma } from "@/generated/prisma/client";
 
 /**
  * The single Prisma instance for the whole app.
@@ -36,3 +43,18 @@ export const prisma: PrismaClient = globalForPrisma.prisma ?? createClient();
 if (process.env.NODE_ENV !== "production") {
   globalForPrisma.prisma = prisma;
 }
+
+/**
+ * Either the long-lived client or a transaction client.
+ *
+ * Service functions take a `Db` rather than reaching for the `prisma` singleton
+ * directly, for two reasons:
+ *
+ *  1. **Invariant 1 requires composition inside one transaction.** Currency
+ *     moves and the ledger row that records it must be atomic, which means a
+ *     service has to be callable as `prisma.$transaction((tx) => …)`. A service
+ *     that closed over the singleton could not join a caller's transaction.
+ *  2. Integration tests point at a throwaway database, which is not the one the
+ *     singleton reads from `DATABASE_URL`.
+ */
+export type Db = PrismaClient | Prisma.TransactionClient;

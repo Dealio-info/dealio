@@ -29,14 +29,22 @@ const BOUNDARY_MESSAGE =
  */
 const prismaBoundary = {
   paths: [
-    { name: "@prisma/client", message: BOUNDARY_MESSAGE },
-    { name: "@prisma/adapter-pg", message: BOUNDARY_MESSAGE },
+    { name: "@prisma/client", message: BOUNDARY_MESSAGE, allowTypeImports: true },
+    { name: "@prisma/adapter-pg", message: BOUNDARY_MESSAGE, allowTypeImports: true },
   ],
   patterns: [
     {
       // Matches the `@/` alias form and relative forms alike.
       group: ["**/generated/prisma", "**/generated/prisma/**"],
       message: BOUNDARY_MESSAGE,
+      // `allowTypeImports` is why this uses the typescript-eslint version of
+      // the rule rather than the core one. Domain types — `MembershipRole`,
+      // `OpportunityStatus` — are erased at compile time and cannot touch the
+      // database, so sharing them with components is safe and stops those
+      // unions being hand-duplicated and drifting. A value import of the same
+      // module is still blocked: Prisma's generated `enums.ts` exports a
+      // runtime const alongside each type, and that is the line this draws.
+      allowTypeImports: true,
     },
   ],
 };
@@ -64,7 +72,7 @@ export default tseslint.config(
   reactHooks.configs.flat["recommended-latest"],
   {
     rules: {
-      "no-restricted-imports": ["error", prismaBoundary],
+      "@typescript-eslint/no-restricted-imports": ["error", prismaBoundary],
       "@typescript-eslint/consistent-type-imports": "error",
       "@typescript-eslint/no-unused-vars": [
         "error",
@@ -73,10 +81,20 @@ export default tseslint.config(
     },
   },
   {
-    // The only two places allowed to reach the database.
-    files: ["src/server/db.ts", "src/server/services/**/*.ts"],
+    // The only places allowed to reach the database.
+    //
+    // `src/test/integration/**` is here because the harness must construct its
+    // own client against the throwaway test database. Test code never ships to
+    // the browser, so this does not weaken the rule it is exempt from — but
+    // service tests should still go through service functions rather than
+    // reaching past them with the harness client.
+    files: [
+      "src/server/db.ts",
+      "src/server/services/**/*.ts",
+      "src/test/integration/**/*.ts",
+    ],
     rules: {
-      "no-restricted-imports": "off",
+      "@typescript-eslint/no-restricted-imports": "off",
     },
   },
   prettier,

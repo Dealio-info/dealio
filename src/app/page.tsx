@@ -10,6 +10,9 @@ export default function Home() {
         <code>docs/decisions.md</code> for what has been settled and{" "}
         <code>CLAUDE.md</code> for the architecture rules.
       </p>
+      <div>
+        <Button variant="outline">shadcn/ui is wired up</Button>
+      </div>
     </main>
   );
 }

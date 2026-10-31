@@ -1,21 +1,18 @@
 // Dealio schema.
 //
-// Intentionally empty of models. The full domain schema — Business, User,
-// Membership, PlatformStaff, Advocate, AdvocateInvite, Opportunity,
-// OpportunityEvent, LedgerEntry, Reward, Redemption — lands in Task 2,
-// together with the integration-test database harness.
+// Rules this file is built around (see CLAUDE.md for the full set):
 //
-// Two rules for this file, both load-bearing:
+//  1. Every tenant-scoped model carries `businessId`. Only `User` and
+//     `PlatformStaff` are global.
+//  2. `LedgerEntry` is append-only and an advocate's balance is SUM(delta) —
+//     there is no stored balance column anywhere. Append-only is enforced by a
+//     database trigger in the migration, not just by convention.
+//  3. `PlatformStaff` is its own table, never a role value, so Dealio staff and
+//     customer business admins cannot be conflated.
+//  4. Currency amounts are integers. Money is integer cents.
 //
-//  1. Every tenant-scoped model carries `businessId`. There is no global
-//     data except `User` and `PlatformStaff`.
-//  2. `LedgerEntry` is append-only. No service may ever expose an update or
-//     delete against it, and an advocate's balance is the sum of its rows
-//     rather than a stored column. See CLAUDE.md.
-//
-// Prisma 7 notes: the connection URL lives in `prisma.config.ts`, not here,
-// and the client is generated into `src/generated/prisma` (gitignored) rather
-// than into `node_modules/@prisma/client`. Import it only via
+// Prisma 7: the connection URL lives in `prisma.config.ts`, and the client is
+// generated into `src/generated/prisma` (gitignored). Import it only via
 // `src/server/db.ts`.
 
 generator client {
@@ -25,4 +22,388 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// Global
+// ---------------------------------------------------------------------------
+
+/// Mirrors a Supabase auth user. Global: one row per human, regardless of how
+/// many businesses they belong to or advocate for.
+model User {
+  id             String   @id @default(uuid(7)) @db.Uuid
+  supabaseUserId String   @unique @db.Uuid
+  email          String   @unique
+  name           String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  platformStaff        PlatformStaff?
+  memberships          Membership[]
+  advocateProfiles     Advocate[]
+  createdOpportunities Opportunity[]
+  opportunityEvents    OpportunityEvent[]
+  ledgerEntries        LedgerEntry[]
+  redemptionDecisions  Redemption[]
+
+  @@map("users")
+}
+
+/// Dealio's own staff. Deliberately a separate table rather than a
+/// `MembershipRole` value: conflating platform staff with customer business
+/// admins was the prototype's worst defect. Membership in this table confers no
+/// business-scoped access at all.
+model PlatformStaff {
+  userId    String   @id @db.Uuid
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("platform_staff")
+}
+
+// ---------------------------------------------------------------------------
+// Tenancy
+// ---------------------------------------------------------------------------
+
+/// The tenant. Every scoped record points back here.
+model Business {
+  id   String @id @default(uuid(7)) @db.Uuid
+  name String
+  slug String @unique
+
+  /// Approval policy, chosen at onboarding. Two independent flags because they
+  /// gate two different transitions. Read from this row inside the transaction
+  /// that performs a transition — never from the request, or a rep could widen
+  /// their own authority. Both default to requiring approval, since the
+  /// currency has real monetary value.
+  requireAdminApprovalForOpportunities Boolean @default(true)
+  requireAdminApprovalForRewards       Boolean @default(true)
+
+  /// Optional per-business label for the reward currency. The product-wide
+  /// default lives in `src/lib/currency.ts`.
+  currencyNameOverride String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  memberships   Membership[]
+  advocates     Advocate[]
+  opportunities Opportunity[]
+  rewards       Reward[]
+  redemptions   Redemption[]
+  ledgerEntries LedgerEntry[]
+
+  @@map("businesses")
+}
+
+enum MembershipRole {
+  BUSINESS_ADMIN
+  REP
+}
+
+/// A user's seat at a business. Advocates are NOT memberships — they are
+/// `Advocate` records, because they are the business's customers rather than
+/// its staff.
+model Membership {
+  id         String         @id @default(uuid(7)) @db.Uuid
+  userId     String         @db.Uuid
+  businessId String         @db.Uuid
+  role       MembershipRole
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, businessId])
+  @@index([businessId, role])
+  @@map("memberships")
+}
+
+// ---------------------------------------------------------------------------
+// Advocates
+// ---------------------------------------------------------------------------
+
+enum AdvocateStatus {
+  INVITED
+  ACTIVE
+  INACTIVE
+}
+
+/// A customer of the business who can be asked to advocate.
+///
+/// Unique on (businessId, email) rather than globally: the same person can be
+/// an advocate for two different Dealio customers, and those records must stay
+/// independent. The prototype matched advocates on bare global email, which
+/// leaked across tenants.
+model Advocate {
+  id         String  @id @default(uuid(7)) @db.Uuid
+  businessId String  @db.Uuid
+  /// Null until the invite is claimed. Claiming links, never reassigns
+  /// `businessId`.
+  userId     String? @db.Uuid
+
+  email   String
+  name    String?
+  company String?
+  title   String?
+
+  status AdvocateStatus @default(INVITED)
+
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  lastActiveAt DateTime?
+
+  business      Business         @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  user          User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
+  invites       AdvocateInvite[]
+  opportunities Opportunity[]
+  ledgerEntries LedgerEntry[]
+  redemptions   Redemption[]
+
+  @@unique([businessId, email])
+  @@index([businessId, status])
+  @@index([userId])
+  @@map("advocates")
+}
+
+/// A single-use invite. Only the hash is stored, so a database leak cannot be
+/// replayed into account takeover. Claiming requires the token — an email match
+/// alone is not sufficient.
+model AdvocateInvite {
+  id         String    @id @default(uuid(7)) @db.Uuid
+  advocateId String    @db.Uuid
+  tokenHash  String    @unique
+  expiresAt  DateTime
+  claimedAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  advocate Advocate @relation(fields: [advocateId], references: [id], onDelete: Cascade)
+
+  @@index([advocateId])
+  @@map("advocate_invites")
+}
+
+// ---------------------------------------------------------------------------
+// Opportunities
+// ---------------------------------------------------------------------------
+
+enum OpportunityType {
+  EMAIL_INTRO
+  REFERENCE_CALL
+  CASE_STUDY
+  TESTIMONIAL
+  PRODUCT_DEMO
+}
+
+/// `PENDING_APPROVAL` exists for businesses that require admin sign-off before
+/// an opportunity reaches the advocate. Where that policy is delegated, a rep's
+/// opportunity goes straight to `REQUESTED`.
+enum OpportunityStatus {
+  PENDING_APPROVAL
+  REQUESTED
+  ACCEPTED
+  COMPLETED
+  VERIFIED
+  REWARDED
+  DECLINED
+  CANCELLED
+}
+
+model Opportunity {
+  id              String @id @default(uuid(7)) @db.Uuid
+  businessId      String @db.Uuid
+  createdByUserId String @db.Uuid
+  advocateId      String @db.Uuid
+
+  type   OpportunityType
+  status OpportunityStatus @default(PENDING_APPROVAL)
+
+  title       String
+  description String?
+
+  /// Currency units, integer. What the advocate earns on `REWARDED`.
+  rewardAmount Int
+
+  prospectName    String?
+  prospectCompany String?
+  prospectEmail   String?
+
+  /// Minimal influenced-revenue attribution: an optional amount recorded at
+  /// verification. Integer cents, BigInt so a large enterprise deal cannot
+  /// overflow. Convert at the serialization boundary — BigInt is not JSON.
+  influencedRevenueCents BigInt?
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  requestedAt DateTime?
+  acceptedAt  DateTime?
+  completedAt DateTime?
+  verifiedAt  DateTime?
+  rewardedAt  DateTime?
+  /// Set when the opportunity reaches `DECLINED` or `CANCELLED`.
+  closedAt    DateTime?
+
+  business      Business           @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  createdBy     User               @relation(fields: [createdByUserId], references: [id])
+  advocate      Advocate           @relation(fields: [advocateId], references: [id], onDelete: Cascade)
+  events        OpportunityEvent[]
+  ledgerEntries LedgerEntry[]
+
+  @@index([businessId, status])
+  @@index([advocateId, status])
+  @@index([createdByUserId])
+  @@map("opportunities")
+}
+
+/// Append-only audit of every lifecycle transition. Written in the same
+/// transaction as the transition it records.
+model OpportunityEvent {
+  id            String             @id @default(uuid(7)) @db.Uuid
+  opportunityId String             @db.Uuid
+  fromStatus    OpportunityStatus?
+  toStatus      OpportunityStatus
+  /// Null for system-driven transitions.
+  actorUserId   String?            @db.Uuid
+  note          String?
+  createdAt     DateTime           @default(now())
+
+  opportunity Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  actor       User?       @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([opportunityId, createdAt])
+  @@map("opportunity_events")
+}
+
+// ---------------------------------------------------------------------------
+// Currency ledger
+// ---------------------------------------------------------------------------
+
+enum LedgerReason {
+  /// Credit when an opportunity reaches `REWARDED`.
+  OPPORTUNITY_REWARD
+  /// Debit when a redemption is approved.
+  REDEMPTION
+  /// Compensating credit when fulfillment fails after the debit was written.
+  /// The debit is never deleted — this table is append-only.
+  FULFILLMENT_FAILED
+  /// Admin correction. Requires a note.
+  MANUAL_ADJUSTMENT
+  /// Reserved for balance expiry, which is not built.
+  EXPIRY
+}
+
+/// The single source of truth for currency. Append-only, enforced by a database
+/// trigger. An advocate's balance is SUM(delta) over their rows; there is no
+/// cached balance column, so it cannot drift.
+model LedgerEntry {
+  id         String @id @default(uuid(7)) @db.Uuid
+  businessId String @db.Uuid
+  advocateId String @db.Uuid
+
+  /// Signed. Credits positive, debits negative. Never zero.
+  delta  Int
+  reason LedgerReason
+
+  opportunityId String? @db.Uuid
+  redemptionId  String? @db.Uuid
+  /// Null for system-driven entries.
+  actorUserId   String? @db.Uuid
+
+  note      String?
+  createdAt DateTime @default(now())
+
+  business    Business     @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  advocate    Advocate     @relation(fields: [advocateId], references: [id], onDelete: Cascade)
+  opportunity Opportunity? @relation(fields: [opportunityId], references: [id], onDelete: SetNull)
+  redemption  Redemption?  @relation(fields: [redemptionId], references: [id], onDelete: SetNull)
+  actor       User?        @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  /// Idempotency, enforced by the database rather than by application care:
+  /// at most one reward credit per opportunity, and at most one debit plus one
+  /// compensating credit per redemption. Postgres treats NULLs as distinct, so
+  /// these do not constrain unrelated entries.
+  @@unique([opportunityId, reason])
+  @@unique([redemptionId, reason])
+  @@index([advocateId, createdAt])
+  @@index([businessId, createdAt])
+  @@map("ledger_entries")
+}
+
+// ---------------------------------------------------------------------------
+// Rewards and redemptions
+// ---------------------------------------------------------------------------
+
+/// A business's own prize catalog. Scoped by `businessId` — there is no shared
+/// global catalog, which was incoherent in the prototype.
+model Reward {
+  id         String @id @default(uuid(7)) @db.Uuid
+  businessId String @db.Uuid
+
+  name        String
+  description String?
+  /// Cost in currency units, integer.
+  cost        Int
+
+  /// Deactivate rather than delete, so historical redemptions keep resolving.
+  isActive Boolean @default(true)
+
+  /// Which Tremendous product this maps to, once fulfillment is wired up.
+  /// Nullable: the funding model is still open, and a business may define a
+  /// reward it fulfills itself.
+  tremendousProductId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  business    Business     @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  redemptions Redemption[]
+
+  @@index([businessId, isActive])
+  @@map("rewards")
+}
+
+/// Fulfillment runs through an external provider, so the states after
+/// `APPROVED` are asynchronous and arrive by webhook.
+enum RedemptionStatus {
+  REQUESTED
+  APPROVED
+  ORDERED
+  DELIVERED
+  FAILED
+  REJECTED
+}
+
+model Redemption {
+  id         String @id @default(uuid(7)) @db.Uuid
+  businessId String @db.Uuid
+  advocateId String @db.Uuid
+  rewardId   String @db.Uuid
+
+  /// Snapshot of the reward's cost when requested, so later edits to the
+  /// catalog cannot change what was already agreed. Integer currency units.
+  cost   Int
+  status RedemptionStatus @default(REQUESTED)
+
+  /// The provider's order id. Unique so a replayed webhook cannot double-write.
+  externalOrderId String? @unique
+  failureReason   String?
+
+  requestedAt     DateTime  @default(now())
+  decidedAt       DateTime?
+  decidedByUserId String?   @db.Uuid
+  orderedAt       DateTime?
+  deliveredAt     DateTime?
+  updatedAt       DateTime  @updatedAt
+
+  business      Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  advocate      Advocate      @relation(fields: [advocateId], references: [id], onDelete: Cascade)
+  reward        Reward        @relation(fields: [rewardId], references: [id])
+  decidedBy     User?         @relation(fields: [decidedByUserId], references: [id], onDelete: SetNull)
+  ledgerEntries LedgerEntry[]
+
+  @@index([businessId, status])
+  @@index([advocateId, requestedAt])
+  @@map("redemptions")
 }

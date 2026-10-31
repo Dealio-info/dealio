@@ -8,17 +8,21 @@
 
 /*
  * Brand direction from the product brief, not final: deep navy / near-black,
- * vibrant green, off-white. Defined as tokens so settling the palette later is
- * a change in one place.
+ * vibrant green, off-white. Namespaced under `brand-` so these never collide
+ * with shadcn's semantic tokens — an un-namespaced `--color-accent` here was
+ * silently overridden by shadcn's `@theme inline` block below.
+ *
+ * Use these for brand surfaces (`bg-brand-green`), and shadcn's semantic
+ * tokens (`bg-background`, `text-foreground`, `bg-primary`) for UI chrome, so
+ * component theming stays consistent.
  */
 @theme {
-  --color-ink: #0b1220;
-  --color-accent: #16c172;
-  --color-paper: #f7f7f5;
+  --color-brand-ink: #0b1220;
+  --color-brand-green: #16c172;
+  --color-brand-paper: #f7f7f5;
 }
 
 :root {
-  color-scheme: light dark;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -53,17 +57,6 @@
   --sidebar-ring: oklch(0.708 0 0);
 }
 
-body {
-  background: var(--color-paper);
-  color: var(--color-ink);
-}
-
-@media (prefers-color-scheme: dark) {
-  body {
-    background: var(--color-ink);
-    color: var(--color-paper);
-  }
-}
 /*
  ---break---
  */

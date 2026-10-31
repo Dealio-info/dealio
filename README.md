@@ -25,19 +25,22 @@ sees influenced revenue.
 Activity lifecycle: **requested → accepted → completed → verified → rewarded**, with `declined`
 and `cancelled` as exits.
 
-**Dealio never holds customer money.** Each company configures its own prize catalog and
-fulfills its own prizes, so Dealio's revenue is purely the software subscription.
+Redemptions are fulfilled through the [Tremendous](https://www.tremendous.com) API. **Dealio holds
+no customer float**: each company connects its own Tremendous organization over OAuth, and payouts
+are issued against that company's balance. The payment method belongs to the company and Dealio
+never sees it, so Dealio's revenue is purely the software subscription.
 
 ## Stack
 
-| Layer     | Choice                                             |
-| --------- | -------------------------------------------------- |
-| Framework | Next.js (App Router) + TypeScript, strict          |
-| Database  | Postgres via Prisma                                |
-| Auth      | Supabase Auth — magic link, password, Google       |
-| Styling   | Tailwind CSS v4                                    |
-| Tests     | Vitest, unit + integration against a real Postgres |
-| Hosting   | Vercel, with Supabase and Resend                   |
+| Layer         | Choice                                                                 |
+| ------------- | ---------------------------------------------------------------------- |
+| Framework     | Next.js 16 (App Router) + React 19 + TypeScript, strict                |
+| Database      | Postgres via Prisma 7 (driver adapter; URL in `prisma.config.ts`)      |
+| Auth          | Supabase Auth — magic link, password, Google                           |
+| Styling       | Tailwind CSS v4                                                        |
+| UI components | shadcn/ui (`base-vega` style, on Base UI), with `cn` for class merging |
+| Tests         | Vitest, unit + integration against a real Postgres                     |
+| Hosting       | Vercel, with Supabase and Resend                                       |
 
 ## Getting started
 
@@ -51,31 +54,62 @@ npm run dev           # http://localhost:3000
 
 ### Scripts
 
-| Script                | What it does                                   |
-| --------------------- | ---------------------------------------------- |
-| `npm run dev`         | Dev server                                     |
-| `npm run build`       | Production build                               |
-| `npm run lint`        | ESLint, including the database-import boundary |
-| `npm run typecheck`   | `tsc --noEmit`                                 |
-| `npm test`            | Vitest once                                    |
-| `npm run test:watch`  | Vitest in watch mode                           |
-| `npm run format`      | Prettier write                                 |
-| `npm run db:generate` | Regenerate the Prisma client                   |
+| Script                     | What it does                                   |
+| -------------------------- | ---------------------------------------------- |
+| `npm run dev`              | Dev server                                     |
+| `npm run build`            | Production build                               |
+| `npm run lint`             | ESLint, including the database-import boundary |
+| `npm run typecheck`        | `tsc --noEmit`                                 |
+| `npm test`                 | Vitest once                                    |
+| `npm run test:watch`       | Vitest in watch mode                           |
+| `npm run format`           | Prettier write                                 |
+| `npm run db:generate`      | Regenerate the Prisma client                   |
+| `npm run db:migrate`       | Create and apply a migration in development    |
+| `npm run db:deploy`        | Apply committed migrations (CI and production) |
+| `npm run test:integration` | Integration tests against a real Postgres      |
+| `npm run test:all`         | Unit then integration                          |
 
-CI runs format, lint, typecheck, test and build on every push.
+### Auth
+
+Sign-in is Supabase Auth: magic link by default, with password and Google. Magic link leads because
+advocates sign in rarely, and a password set once and forgotten is friction that costs
+participation.
+
+`src/middleware.ts` refreshes the session and keeps signed-out visitors out of `/app` and
+`/advocate`. It checks only for a session, not roles — roles need the database, and middleware
+cannot reach it. Treat it as a convenience redirect; the service layer is the security boundary.
+
+CI runs format, lint, typecheck, unit tests, integration tests and build on every push.
+
+### Integration tests
+
+`npm test` is pure unit tests and needs no database. `npm run test:integration` needs a real
+Postgres, because the invariants most worth testing live in the database — the append-only ledger
+trigger, the check constraints, and the idempotency unique indexes. A mock would prove nothing
+about them.
+
+Point `TEST_DATABASE_URL` at a throwaway database; the suite creates it if missing, applies the
+committed migrations, and truncates every table between tests. It must differ from `DATABASE_URL`,
+and the harness refuses to run if they match.
+
+Any Postgres will do — `npx prisma dev`, Docker (`docker run --rm -p 5432:5432 -e
+POSTGRES_PASSWORD=postgres postgres:16`), or a local install.
 
 ## Layout
 
 ```
 prisma.config.ts          Prisma CLI config; holds the connection URL (Prisma 7)
-prisma/schema.prisma      Database schema (models land in Task 2)
+prisma/schema.prisma      Database schema
+prisma/migrations/        Committed migration history
 src/
   app/                    Next.js App Router
+  components/ui/          shadcn/ui components (added via CLI, then yours to edit)
   server/
     db.ts                 The only Prisma instance
     services/             All business rules; every function takes a TenantContext
   lib/                    Shared pure helpers (currency name lives here)
   test/                   Test setup
+    integration/          Integration harness, fixtures and schema tests
 docs/
   decisions.md            Running record of decisions and open questions
   prototype-assessment.md Why this is a rebuild, and what the prototype is good for

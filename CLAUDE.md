@@ -4,7 +4,7 @@
 
 The ground-up rebuild of Dealio, a customer advocacy platform for B2B SaaS sales teams. Reps
 post advocacy opportunities; the company's customers ("advocates") complete them, earn a virtual
-currency, and redeem it for prizes the company fulfills.
+currency, and redeem it for rewards fulfilled through the Tremendous API.
 
 Two audiences: the **business side** (business admins and reps) and the **advocates**. They are
 different people with different permissions, and the layout should always make clear which one a
@@ -16,9 +16,16 @@ file serves.
 
 The Prisma client is importable only from `src/server/db.ts` and `src/server/services/**` —
 that covers the generated client in `src/generated/prisma`, the `@prisma/client` package and the
-`@prisma/adapter-pg` driver adapter. Enforced by `no-restricted-imports` in `eslint.config.mjs`,
-not by convention. Pages, components,
-route handlers and server actions call a service function that takes a `TenantContext`.
+`@prisma/adapter-pg` driver adapter. Enforced by `@typescript-eslint/no-restricted-imports` in
+`eslint.config.mjs`, not by convention, and covered by tests in
+`src/server/boundary.test.ts` rather than checked by hand. Pages, components, route handlers and
+server actions call a service function instead.
+
+**Type-only imports are exempt.** `import type { OpportunityStatus } from "@/generated/prisma/enums"`
+is fine anywhere: types are erased at compile time, cannot reach the database, and sharing them
+stops those unions being hand-duplicated and drifting from the schema. A _value_ import of the same
+module is still blocked — Prisma generates a runtime const beside each enum type, and that is where
+the line sits.
 
 Multi-tenant isolation is enforced in the service layer rather than by row-level security. That
 choice is only sound while this rule holds, so **do not relax the lint rule to unblock a
@@ -60,9 +67,37 @@ UI in the MVP; platform staff onboards businesses with a seed script.
 - **Tests first.** Write the failing test, then the implementation. Unit tests for pure logic and
   service rules; integration tests against a real throwaway Postgres for anything touching the
   database. The rules worth testing hardest are permissions, lifecycle transitions and currency.
+- **UI components are shadcn/ui**, in `src/components/ui/`. Add them with
+  `npx shadcn@latest add <name>` rather than hand-writing them; once added they are ordinary
+  project files you may edit. The CLI emits unformatted code, so run `npm run format` after
+  adding one or `format:check` will fail in CI.
+- **Class merging** uses `cn` — import from `cn` directly (as the generated components do) or via
+  the `@/lib/utils` alias. It replaces `clsx` + `tailwind-merge`; don't add those back.
+- **Use shadcn's semantic tokens** (`bg-background`, `text-foreground`, `bg-primary`) for UI
+  chrome, and the `brand-` tokens in `globals.css` (`bg-brand-green`) for brand surfaces. Never
+  declare an un-namespaced `--color-*` that shadcn also defines — its `@theme inline` block comes
+  later in the file and will silently win.
+- **Dark mode is class-based** (`.dark`, via `@custom-variant dark`). Do not add
+  `prefers-color-scheme` rules; they compete with it. And keep `body` colors inside
+  `@layer base` — an unlayered `body` rule overrides layered ones and breaks shadcn theming.
 - **Currency name** lives only in `src/lib/currency.ts`. Never hardcode "coin" anywhere else —
   the name is not final.
 - **Money and currency amounts are integers.** No floats.
+- **Service signature** is `fn(ctx: ServiceContext, input)`, where `ServiceContext` is
+  `{ db, actor }` from `src/server/context.ts`. The database handle is explicit, not the `prisma`
+  singleton, so a service can be composed into a caller's transaction —
+  `prisma.$transaction((tx) => doThing({ db: tx, actor }, input))`. Invariant 1 depends on that: a
+  currency movement and the ledger row recording it must be atomic. `actor` is a `TenantContext`,
+  so it always carries a `businessId`; scope every query by `actor.businessId` and never take a
+  business id from the caller's input.
+- **Authority decisions live in `src/server/context.ts`** and are pure: `assertBusinessAdmin`,
+  `assertSameBusiness`, `canPublishOpportunity`, `canRewardOpportunity`. Use them rather than
+  re-deriving a role check. `ApprovalPolicy` is branded so the only way to obtain one is
+  `approvalPolicyFromBusiness(business)` — which is how invariant 4 stays honest.
+- **Identity is a set, not a single actor.** `resolveIdentity` returns every business a user is
+  staff of or an advocate for; the caller names the business it means via `businessActor` /
+  `advocateActor`, or uses `soleTenantContext`, which refuses rather than guessing when the user
+  belongs to more than one. Never collapse that to a "current" business implicitly.
 - **Validate at the boundary** with Zod in the route handler or server action; services may then
   trust their inputs' shape, though never their authority.
 - **Schema changes** are Prisma migrations, committed. Never edit an applied migration.
@@ -83,11 +118,63 @@ and outcome handlers use deterministic event IDs so retries are safe.
 
 ## Current state
 
-Scaffold only. Next.js 16 + React 19 + TypeScript + Tailwind 4, Vitest 5, ESLint 9 (flat config)
-with the database boundary, and Prisma 7 with no models yet.
+Next.js 16 + React 19 + TypeScript + Tailwind 4, shadcn/ui on Base UI, Vitest 5, ESLint 9 (flat
+config) with the database boundary, and Prisma 7 with the full domain schema migrated.
+
+**Through Task 4, pending credentials.** Schema, tenant context, authority helpers, the
+database-import boundary, and Supabase auth wiring are all in place: `src/server/auth.ts` bridges a
+session to a domain `Identity`, `src/middleware.ts` refreshes the session and gates `/app` and
+`/advocate`, `/auth/callback` exchanges the code, and `/sign-in` offers magic link, password and
+Google. The flow has **not been exercised end to end** — that needs real Supabase credentials.
+
+Two things to know about auth:
+
+- Use `getUser()`, never `getSession()`, for any authorization decision. `getSession()` trusts the
+  cookie; `getUser()` validates the token with Supabase.
+- The middleware checks only "is there a session". It deliberately does **not** check roles, because
+  that needs the database and middleware must stay free of Prisma. It is a convenience redirect, not
+  a security boundary — the service layer is the boundary.
+
+`src/server/db.ts`, `auth.ts` and `supabase.ts` carry `import "server-only"`. That closes a gap the
+lint rule cannot see: the rule blocks importing the Prisma client, but nothing stopped a client
+component importing `@/server/db` and pulling the client into the browser bundle. Keep the marker on
+any new module under `src/server/`.
+
+Known upstream noise: the integration suite prints a `pg` deprecation warning about overlapping
+queries on one client. It comes from inside `@prisma/adapter-pg`'s transaction handling, not from
+our code — do not chase it. It is a reason to keep `pg` pinned to `^8`.
 
 Prisma 7 specifics worth knowing: the connection URL lives in `prisma.config.ts` rather than in
 `schema.prisma`; the client is generated into `src/generated/prisma` (gitignored) instead of
 `node_modules`; and the runtime connects through the `@prisma/adapter-pg` driver adapter. Run
-`npm run db:generate` after changing the schema — `postinstall` does it on a fresh install. The domain schema and the integration-test harness are
-Task 2. `docs/decisions.md` tracks what is settled and what is open.
+`npm run db:generate` after changing the schema — `postinstall` does it on a fresh install.
+
+`docs/decisions.md` tracks what is settled and what is open.
+
+### Invariants the database enforces
+
+Several rules from the list above are constraints, not conventions — the prototype relied on
+application discipline for exactly these and lost real money to it:
+
+- A trigger on `ledger_entries` rejects every UPDATE and DELETE. Corrections are appended
+  (`MANUAL_ADJUSTMENT`, or `FULFILLMENT_FAILED` when an external reward order fails), never
+  edited in place. TRUNCATE is deliberately _not_ blocked, so the test harness can reset.
+- `CHECK` constraints: a ledger delta is never zero, a `MANUAL_ADJUSTMENT` requires a note, and
+  reward amounts, reward costs and influenced revenue are non-negative.
+- Unique indexes on `(opportunityId, reason)` and `(redemptionId, reason)` make reward crediting
+  and redemption debiting idempotent in the database, so a retry or a double-click cannot pay
+  twice.
+- `advocates` is unique on `(businessId, email)`, never globally — the same person can advocate
+  for two different customers.
+
+When writing the trigger, do not set `USING ERRCODE` to anything in Postgres's 23xxx
+integrity-constraint class: Prisma translates those into a generic constraint error and the
+message is lost. The default `raise_exception` (P0001) passes through intact.
+
+### Testing layout
+
+`npm test` is unit-only and needs no database. `npm run test:integration` uses
+`vitest.integration.config.ts`, runs files matching `*.integration.test.ts` serially, and needs
+`TEST_DATABASE_URL`. The harness in `src/test/integration/` is the one place outside
+`src/server/**` allowed to construct a Prisma client; service tests should still go through
+service functions rather than reaching past them.
