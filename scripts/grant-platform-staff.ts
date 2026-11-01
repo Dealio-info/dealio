@@ -43,9 +43,11 @@ async function main() {
   console.log(`\n${result.alreadyHeld ? "Already" : "Now"} Dealio staff: ${email}`);
   console.log(`  user id      ${result.userId}`);
   console.log(`  supabase id  ${auth.supabaseUserId}`);
-  console.log(`  auth user    ${auth.wasCreated ? "created" : "already existed"}`);
   if (auth.actionLink) {
-    console.log(`\nSet a password here (single use):\n  ${auth.actionLink}`);
+    console.log(
+      `\nSet a password here. Single use, and it replaces any earlier link ` +
+        `for this person:\n  ${auth.actionLink}`,
+    );
   }
   console.log(
     "\nThis grants no access to any business's data. Next: npm run seed:business\n",

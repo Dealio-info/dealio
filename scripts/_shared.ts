@@ -45,7 +45,6 @@ export type ProvisionedAuthUser = {
   readonly email: string;
   /** Where the person goes to set a password. Undefined when none was minted. */
   readonly actionLink: string | undefined;
-  readonly wasCreated: boolean;
 };
 
 /**
@@ -62,6 +61,19 @@ export type ProvisionedAuthUser = {
  * Supabase's admin API has no look-up-by-email, which is why the
  * already-exists case falls through to a recovery link: it is also how we
  * learn their auth id.
+ *
+ * It deliberately does **not** report whether the auth user was created or
+ * already existed. `generateLink({ type: "invite" })` succeeds for an existing
+ * unconfirmed user and returns them, so the create and reuse paths are
+ * indistinguishable from the response — an earlier version claimed "created"
+ * every time, which was simply wrong. The admin API offers no reliable signal
+ * (`created_at` would need a trustworthy shared clock, and an unconfirmed user
+ * looks the same either way), so the scripts print the auth id and say nothing
+ * they cannot stand behind.
+ *
+ * One consequence worth knowing: Supabase stores one token per type per user,
+ * so minting a link replaces any earlier one for that person. The newest link
+ * is the only one that works.
  */
 export async function provisionAuthUser(input: {
   readonly email: string;
@@ -82,7 +94,6 @@ export async function provisionAuthUser(input: {
         supabaseUserId: data.user.id,
         email: input.email,
         actionLink: undefined,
-        wasCreated: true,
       };
     }
     if (error && !isAlreadyRegistered(error)) {
@@ -108,7 +119,6 @@ export async function provisionAuthUser(input: {
       supabaseUserId: invited.data.user.id,
       email: input.email,
       actionLink: invited.data.properties?.action_link,
-      wasCreated: true,
     };
   }
   if (invited.error && !isAlreadyRegistered(invited.error)) {
@@ -130,7 +140,6 @@ export async function provisionAuthUser(input: {
     supabaseUserId: recovery.data.user.id,
     email: input.email,
     actionLink: recovery.data.properties?.action_link,
-    wasCreated: false,
   };
 }
 
