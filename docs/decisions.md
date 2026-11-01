@@ -210,7 +210,95 @@ an integration test fails if it does not.
 mode on 6543 for the app, session mode on 5432 for migrations. Prisma 7 takes both from
 `prisma.config.ts`, not from `schema.prisma`.
 
+## Carried over from the prototype
+
+Skim of `dealio-referrals@06ccc81` on 2026-11-01 — 36 commits of UI and product jamming since the
+rebuild was decided. What it changed, and what we do about each.
+
+### Naming: "opportunity" became "quest"
+
+The prototype renamed the user-facing noun (`5ce6483`). It is **copy only**. No table, file, hook,
+enum or event type moved: `opportunities`, `opportunity_id`, `opportunity_created` and
+`opportunity-response` all stand, the components are still `CreateOpportunityDialog.tsx` and
+`useOpportunities.ts`, and the rename reached existing data through a
+`replace(description, 'Opportunity', 'Quest')` over `activity_log`. So "quest" is presentation and
+"opportunity" is still the domain term there.
+
+Our `Opportunity` model, `OpportunityStatus` and `OpportunityEvent` are unchanged pending a
+decision. "Coins" was not renamed.
+
+### Reward catalog: digital gift cards, and a first price point
+
+Merchandise was deactivated and replaced with five email-delivered gift cards. The coin costs imply
+a rate of roughly **$5 per coin** — 5 coins for $25, 10 for $50, 20 for $100, 50 for $250. That is
+the first concrete monetary value anyone has put on the currency, and it is worth treating as data
+for the open "per-activity reward amounts" question rather than as a decision.
+
+It also confirms the Tremendous choice is pointed the right way: the catalog the prototype landed on
+is digital gift cards delivered by email, which is exactly what Tremendous fulfills.
+
+### Redemptions should snapshot more than the price
+
+Deleting a reward used to break historical redemptions. The prototype fixed it by denormalizing
+`reward_name` and `reward_value` onto `coin_redemptions`, then making `reward_id` nullable with
+`ON DELETE SET NULL`.
+
+We are already safe against the orphan — `Reward.isActive` soft-deactivates and `Redemption.rewardId`
+is required, so Postgres refuses to delete a referenced reward. And `Redemption.cost` already
+snapshots the price, for the stated reason that later catalog edits must not change what was already
+agreed. But the **name** is not snapshotted, and the same reasoning applies to it: rename a reward
+and every past redemption silently re-labels itself.
+
+### UX patterns worth taking
+
+- **One-click accept or decline from the email**, landing back on the app with `?accepted=1` so it
+  can celebrate on arrival. The plan already has the response flow; the query-param handoff is the
+  detail worth copying.
+- **Three full-screen celebrations** (quest accepted, quest completed, coins earned) in
+  framer-motion: click to dismiss, auto-dismiss after 3.4–3.8s. We have no animation library yet;
+  that is a Task 9/13 decision, not a schema one.
+- **Celebrate once, not on every poll.** They keep a `localStorage` set of already-celebrated
+  approvals. The requirement is real; server-side we can key it on the ledger entry instead of
+  trusting the browser to remember.
+- **Inline approve/reject** in the dashboard list rather than through a dialog.
+- Prospect phone was dropped from the create form.
+
+Not worth copying: admin reward mutations now append `.select()` and read an empty result as "you
+may not have permission", because PostgREST with RLS returns success for zero affected rows. That is
+a workaround for the prototype's architecture — our services raise `ForbiddenError` — and it is a
+good illustration of why authority belongs in a service layer rather than in policies.
+
+### Lovable moved the prototype to Drizzle
+
+Schema changes there now run through `drizzle.config.ts` and `drizzle/migrations/*.sql` against
+`LOVABLE_DB_MIGRATION_URL`. `drizzle/schema.ts` is a stub marked "auto-generated and intentionally
+left blank", so the migrations are hand-written SQL and Drizzle is only the runner. Nothing to
+adopt — we use Prisma migrations — but it means the prototype's own instruction to put schema
+changes in `supabase/migrations/` is now stale in that repo too.
+
+### A new defect, in a path that was previously hardened
+
+`Dashboard.handleApproveCoins` is new and credits currency **from the browser**: it reads the
+balance out of a React Query cache snapshot, writes `coins_earned` as an absolute value, and does so
+in a second write that is not atomic with setting `coins_approved`. It **bypasses** the
+compare-and-swap in `useSendCoins`, which is still intact.
+
+So the record that "the award path was hardened" is now true of only one of two award paths. Two
+admins approving at once lose a credit; a failure between the two writes marks an opportunity
+approved with nothing credited. Our invariant 1 — currency moves only inside the transaction that
+writes the ledger row — exists precisely because this keeps happening, and it happening again in a
+path someone had already fixed is the strongest argument yet that the capability, not the call site,
+is the problem.
+
 ## Log
+
+**2026-11-01 — Skimmed the prototype's latest and recorded what to carry over.**
+36 commits of product jamming since the rebuild was decided. Three things that matter: the
+user-facing noun became "quest" (copy only — the domain is still "opportunity" there); the reward
+catalog became email-delivered gift cards at an implied ~$5 per coin, which is the first price ever
+put on the currency and corroborates the Tremendous direction; and a newly added dashboard approve
+button credits currency from the browser, bypassing the compare-and-swap that had already fixed the
+other award path. Details above under **Carried over from the prototype**.
 
 **2026-11-01 — Closed Supabase's PostgREST exposure.**
 The init migration deployed cleanly to Supabase, and a probe of the project immediately afterwards
