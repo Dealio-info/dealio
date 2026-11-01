@@ -127,6 +127,11 @@ and outcome handlers use deterministic event IDs so retries are safe.
 Next.js 16 + React 19 + TypeScript + Tailwind 4, shadcn/ui on Base UI, Vitest 5, ESLint 9 (flat
 config) with the database boundary, and Prisma 7 with the full domain schema migrated.
 
+**Through Task 6.** Task 6 added the `advocates` module — `inviteAdvocate`, `claimInvite`,
+`listAdvocates` — with hashed single-use invite tokens. `claimInvite` takes a `Db` and a `userId`
+rather than a `ServiceContext`, because the person claiming has no tenant context yet; the invite is
+what gives them one. **Claiming requires the token and nothing else** — no email fallback, ever.
+
 **Through Task 5.** Task 5 added the `tenancy` service module — `createBusiness`, `addMember`,
 `listMembers`, `getApprovalPolicy`/`updateApprovalPolicy`, `grantPlatformStaff` and
 `resolvePlatformStaffActor` — plus `scripts/grant-platform-staff.ts` and
@@ -237,6 +242,27 @@ Three things to keep straight:
   if you forget.
 - **If the app ever connects as a non-owner role**, the lock starts applying to us. The fix is a
   `BYPASSRLS` grant or an owner connection — never disabling RLS.
+
+### Concurrency tests need two clients, and usually need a held lock
+
+Two `$transaction` calls on the _same_ Prisma client do not reliably interleave, so a test that
+fires both with `Promise.all` can pass against code with no concurrency protection at all. That is
+not hypothetical: a claim-invite race test here stayed green after both of its compare-and-swaps
+were replaced with plain writes. `separateTestPrisma()` in the harness gives a second connection
+pool for genuine overlap — warm it with a query first, since a cold client's handshake outlasts the
+transaction you are racing.
+
+Even then, two claims fired at once do not produce the dangerous interleaving: whichever reads
+second sees the committed result and stops at an ordinary pre-check. To cover the read-then-write
+window itself, hold an **uncommitted** write on the row from the second client, start the operation
+under test so it reads the old value and blocks on the lock, then release. The conditional update is
+then the only thing that can notice. `advocates.integration.test.ts` has two of these, one per row
+involved.
+
+**When mutation-testing a guard, assert the mutation applied.** A search-and-replace that silently
+misses — because Prettier rewrapped the line, say — reports a guard as load-bearing when the test
+never ran against modified code. Two findings in this repo were briefly wrong for exactly that
+reason.
 
 ### Testing layout
 

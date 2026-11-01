@@ -303,6 +303,36 @@ is the problem.
 
 ## Log
 
+**2026-11-01 — Task 6: advocates — invite, claim, list.**
+`inviteAdvocate` creates the `Advocate` and a hashed single-use token, returning the plaintext once;
+`claimInvite` links a signed-in user to that record; `listAdvocates` is staff-only. 25 integration
+tests.
+
+`claimInvite` takes a `Db` and a `userId`, not a `ServiceContext` — the claimer has no tenant
+context yet, and requiring one would be circular. **The token is the only accepted proof.** The
+original plan allowed an email-match fallback when Supabase reported the address verified; that was
+closed off earlier and this follows the later decision, because email confirmation is currently off
+in development and a fallback is exactly what would make that setting load-bearing again.
+
+Tokens are SHA-256, not bcrypt or argon2: stretching protects _chosen_ secrets, and this is 256 bits
+of CSPRNG output with nothing to guess. Re-inviting expires the previous link so only the newest
+works, mirroring Supabase's own one-token-per-type behaviour. Re-inviting a deactivated advocate is
+refused rather than silently reactivating them.
+
+The useful lesson came from the tests. A race test that fired two claims with `Promise.all` on one
+client passed even with **both** compare-and-swaps replaced by plain writes — the transactions were
+serialised, so it proved nothing. Two clients made them genuinely overlap but still did not produce
+the dangerous interleaving, because whichever read second saw the committed result and stopped at an
+ordinary pre-check. What works is holding an uncommitted write on the row from a second connection:
+the operation under test reads the old value, blocks on the lock, and the conditional update is then
+the only thing that can catch it. Both compare-and-swaps now have one such test each and both fail
+without their guard.
+
+Two of those findings were briefly wrong, because a search-and-replace mutation silently missed
+after Prettier rewrapped a line and the script reported success anyway. Mutation tests now assert
+that the mutation applied. Recorded because a guard wrongly believed to be tested is worse than one
+known to be untested.
+
 **2026-11-01 — Task 5: businesses, memberships and onboarding scripts.**
 The `tenancy` module: `createBusiness` (platform staff only, business and first admin in one
 nested write), `addMember`/`listMembers`, `getApprovalPolicy`/`updateApprovalPolicy`,
