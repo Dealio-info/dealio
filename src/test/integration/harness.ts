@@ -72,3 +72,21 @@ export async function resetDb(): Promise<void> {
   const quoted = tables.map((t) => `"public"."${t.tablename}"`).join(", ");
   await prisma.$executeRawUnsafe(`TRUNCATE TABLE ${quoted} RESTART IDENTITY CASCADE`);
 }
+
+/**
+ * A second Prisma client with its own connection pool.
+ *
+ * For concurrency tests only. Two `$transaction` calls on the *same* client do
+ * not reliably interleave — the adapter may serialise them, so a test that
+ * fires both with `Promise.all` can pass against code with no concurrency
+ * protection at all. Discovered the hard way: a claim-invite race test stayed
+ * green after both of its compare-and-swaps were replaced with plain writes.
+ *
+ * Separate pools give genuinely concurrent transactions. The caller owns the
+ * client and must disconnect it.
+ */
+export function separateTestPrisma(): PrismaClient {
+  return new PrismaClient({
+    adapter: new PrismaPg({ connectionString: testDatabaseUrl() }),
+  });
+}
