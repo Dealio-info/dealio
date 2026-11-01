@@ -119,6 +119,21 @@ export function isBusinessAdmin(actor: Actor): boolean {
   return actor.kind === "business" && actor.role === "BUSINESS_ADMIN";
 }
 
+/**
+ * Narrow to a member of a business's staff — admin or rep — or refuse.
+ *
+ * Distinct from `assertBusinessAdmin`, which is about rank, and from
+ * `requireTenantContext`, which admits advocates. An advocate carries the same
+ * `businessId` as that business's reps, so for anything that exposes the
+ * business's own side of the product — the staff list, the policy, the
+ * dashboard — being tenant-scoped is not enough.
+ */
+export function assertBusinessActor(actor: Actor): asserts actor is BusinessActor {
+  if (actor.kind !== "business") {
+    throw new ForbiddenError("This action requires a business team member");
+  }
+}
+
 export function assertBusinessAdmin(actor: Actor): asserts actor is BusinessActor {
   if (!isBusinessAdmin(actor)) {
     throw new ForbiddenError("This action requires a business admin");

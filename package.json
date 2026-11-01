@@ -22,7 +22,9 @@
     "test:all": "npm run test && npm run test:integration",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
-    "verify:lockdown": "bash scripts/verify-postgrest-locked.sh"
+    "verify:lockdown": "bash scripts/verify-postgrest-locked.sh",
+    "grant:staff": "tsx --conditions=react-server scripts/grant-platform-staff.ts",
+    "seed:business": "tsx --conditions=react-server scripts/seed-business.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
@@ -61,6 +63,7 @@
     "prisma": "^7.10.1",
     "shadcn": "^4.23.0",
     "tailwindcss": "^4.3.3",
+    "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.46.0",
     "vitest": "^5.0.5"

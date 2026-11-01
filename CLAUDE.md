@@ -127,6 +127,12 @@ and outcome handlers use deterministic event IDs so retries are safe.
 Next.js 16 + React 19 + TypeScript + Tailwind 4, shadcn/ui on Base UI, Vitest 5, ESLint 9 (flat
 config) with the database boundary, and Prisma 7 with the full domain schema migrated.
 
+**Through Task 5.** Task 5 added the `tenancy` service module — `createBusiness`, `addMember`,
+`listMembers`, `getApprovalPolicy`/`updateApprovalPolicy`, `grantPlatformStaff` and
+`resolvePlatformStaffActor` — plus `scripts/grant-platform-staff.ts` and
+`scripts/seed-business.ts`. The one part not covered by tests is `provisionAuthUser`, which calls
+Supabase's admin API; it has not been run against a live project yet.
+
 **Through Task 4, pending credentials.** Schema, tenant context, authority helpers, the
 database-import boundary, and Supabase auth wiring are all in place: `src/server/auth.ts` bridges a
 session to a domain `Identity`, `src/middleware.ts` refreshes the session and gates `/app` and
@@ -140,6 +146,17 @@ Two things to know about auth:
 - The middleware checks only "is there a session". It deliberately does **not** check roles, because
   that needs the database and middleware must stay free of Prisma. It is a convenience redirect, not
   a security boundary — the service layer is the boundary.
+
+**Scripts run under `tsx --conditions=react-server`.** `server-only` resolves to its real module —
+which throws — under node's default conditions, and to an empty one under `react-server`, which is
+what Next sets for server components. Any script importing `@/server/db` dies on import without the
+flag. Both `npm run grant:staff` and `npm run seed:business` set it; copy it for any new script.
+
+Scripts are **not** on the database-boundary allowlist, deliberately. They reach the database
+through `@/server/db` and the service layer like any other caller, so there is exactly one place
+that constructs a Prisma client for the app. That is also why the onboarding chains live in
+`src/server/services/tenancy/onboard.ts` rather than in the script bodies: the scripts' one
+untestable act is calling Supabase's admin API, and everything after it belongs somewhere covered.
 
 `src/server/db.ts`, `auth.ts` and `supabase.ts` carry `import "server-only"`. That closes a gap the
 lint rule cannot see: the rule blocks importing the Prisma client, but nothing stopped a client
