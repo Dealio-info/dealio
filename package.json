@@ -24,7 +24,12 @@
     "db:deploy": "prisma migrate deploy",
     "verify:lockdown": "bash scripts/verify-postgrest-locked.sh",
     "grant:staff": "tsx --conditions=react-server scripts/grant-platform-staff.ts",
-    "seed:business": "tsx --conditions=react-server scripts/seed-business.ts"
+    "seed:business": "tsx --conditions=react-server scripts/seed-business.ts",
+    "prebuild": "prisma generate",
+    "pretypecheck": "prisma generate",
+    "pretest": "prisma generate",
+    "pretest:integration": "prisma generate",
+    "predev": "prisma generate"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",

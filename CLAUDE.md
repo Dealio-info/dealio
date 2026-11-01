@@ -175,8 +175,15 @@ generator is `prisma-client` with an `output` path. If a migration suddenly fail
 
 Prisma 7 specifics worth knowing: the connection URL lives in `prisma.config.ts` rather than in
 `schema.prisma`; the client is generated into `src/generated/prisma` (gitignored) instead of
-`node_modules`; and the runtime connects through the `@prisma/adapter-pg` driver adapter. Run
-`npm run db:generate` after changing the schema — `postinstall` does it on a fresh install.
+`node_modules`; and the runtime connects through the `@prisma/adapter-pg` driver adapter.
+
+**The generated client can go stale, and the error does not say so.** It is gitignored, so a `git
+pull` that changes `schema.prisma` leaves the old client on disk, and `postinstall` only fires on
+install. The symptom is `tsc` or Prisma complaining that a field "does not exist" — pointing at
+whichever file happens to use it, usually a test, rather than at the real cause. `dev`, `build`,
+`typecheck`, `test` and `test:integration` therefore all run `prisma generate` first via `pre*`
+hooks. Keep that habit for any new script that compiles or runs application code; `npm run
+db:generate` is the manual form.
 
 `docs/decisions.md` tracks what is settled and what is open.
 
