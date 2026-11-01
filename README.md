@@ -54,23 +54,23 @@ npm run dev           # http://localhost:3000
 
 ### Scripts
 
-| Script                     | What it does                                   |
-| -------------------------- | ---------------------------------------------- |
-| `npm run dev`              | Dev server                                     |
-| `npm run build`            | Production build                               |
-| `npm run lint`             | ESLint, including the database-import boundary |
-| `npm run typecheck`        | `tsc --noEmit`                                 |
-| `npm test`                 | Vitest once                                    |
-| `npm run test:watch`       | Vitest in watch mode                           |
-| `npm run format`           | Prettier write                                 |
-| `npm run db:generate`      | Regenerate the Prisma client                   |
-| `npm run db:migrate`       | Create and apply a migration in development    |
-| `npm run db:deploy`        | Apply committed migrations (CI and production) |
-| `npm run test:integration` | Integration tests against a real Postgres      |
-| `npm run verify:lockdown`  | Check a live Supabase project is locked down   |
-| `npm run grant:staff`      | Make someone Dealio staff (run once, first)    |
-| `npm run seed:business`    | Onboard a business and its first admin         |
-| `npm run test:all`         | Unit then integration                          |
+| Script                     | What it does                                     |
+| -------------------------- | ------------------------------------------------ |
+| `npm run dev`              | Dev server                                       |
+| `npm run build`            | Production build                                 |
+| `npm run lint`             | ESLint, including the database-import boundary   |
+| `npm run typecheck`        | `tsc --noEmit`                                   |
+| `npm test`                 | Vitest once                                      |
+| `npm run test:watch`       | Vitest in watch mode                             |
+| `npm run format`           | Prettier write                                   |
+| `npm run db:generate`      | Regenerate the Prisma client (usually automatic) |
+| `npm run db:migrate`       | Create and apply a migration in development      |
+| `npm run db:deploy`        | Apply committed migrations (CI and production)   |
+| `npm run test:integration` | Integration tests against a real Postgres        |
+| `npm run verify:lockdown`  | Check a live Supabase project is locked down     |
+| `npm run grant:staff`      | Make someone Dealio staff (run once, first)      |
+| `npm run seed:business`    | Onboard a business and its first admin           |
+| `npm run test:all`         | Unit then integration                            |
 
 ### Auth
 
@@ -101,6 +101,11 @@ POSTGRES_PASSWORD=postgres postgres:16`), or a local install.
 **Keep `TEST_DATABASE_URL` pointed at a local throwaway database, never at Supabase.** The harness
 truncates every table between tests; the only guard is that it refuses to run when the two URLs
 match, which would not save a Supabase URL set by mistake.
+
+The Prisma client is generated into `src/generated/prisma`, which is gitignored — so after a pull
+that changes the schema, the client on disk is stale. `dev`, `build`, `typecheck`, `test` and
+`test:integration` regenerate it first, so this normally takes care of itself; `npm run
+db:generate` is the manual form if you need it.
 
 ### Applying migrations
 
