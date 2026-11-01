@@ -303,6 +303,20 @@ is the problem.
 
 ## Log
 
+**2026-11-01 — Auth confirmed end to end against the live project.**
+The last unverified link in Task 4 and Task 5. `provisionAuthUser` really does create a Supabase
+auth user, and a link it mints really does sign someone in. Nothing in the flow needed changing.
+
+Two output problems surfaced instead, both now fixed: the scripts claimed "auth user created" even
+when they had reused an existing one, and they printed a set-password link under wording that read
+as though it had been emailed. Neither was a logic bug and both wasted someone's time, which is the
+argument for treating script output as part of the interface rather than as logging.
+
+Worth knowing for later: `--send` only mails a link for an address Supabase has not seen before.
+For an existing auth user, `inviteUserByEmail` reports `email_exists`, so we fall back to minting a
+link and printing it. The reliable way to get a real email today is the magic link on `/sign-in`,
+which goes through `signInWithOtp`. Proper sending is Task 14.
+
 **2026-11-01 — Task 6: advocates — invite, claim, list.**
 `inviteAdvocate` creates the `Advocate` and a hashed single-use token, returning the plaintext once;
 `claimInvite` links a signed-in user to that record; `listAdvocates` is staff-only. 25 integration
