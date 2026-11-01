@@ -68,6 +68,8 @@ npm run dev           # http://localhost:3000
 | `npm run db:deploy`        | Apply committed migrations (CI and production) |
 | `npm run test:integration` | Integration tests against a real Postgres      |
 | `npm run verify:lockdown`  | Check a live Supabase project is locked down   |
+| `npm run grant:staff`      | Make someone Dealio staff (run once, first)    |
+| `npm run seed:business`    | Onboard a business and its first admin         |
 | `npm run test:all`         | Unit then integration                          |
 
 ### Auth
@@ -114,6 +116,31 @@ using the publishable key and fails unless each one is refused. It is a deploy c
 the integration suite proves what the migrations do on any Postgres, and this proves they reached
 this project. It fails closed, so a missing key or an unfamiliar response is a failure rather than
 a pass.
+
+### Onboarding a business
+
+There is no self-serve signup. Dealio staff onboard a business with two scripts, and both need
+`DATABASE_URL` and `SUPABASE_SECRET_KEY` — so run them from a machine with a direct Postgres
+connection, not from a cloud session.
+
+```sh
+npm run grant:staff    -- --email you@dealio.info --name "Your Name"
+npm run seed:business  -- --name "Acme Corp" --admin-email ceo@acme.com
+```
+
+`grant:staff` comes first: `seed:business` acts as a named platform staff member and refuses rather
+than inventing one. Both print a single-use link for setting a password; pass `--send` to have
+Supabase email it instead. Printing is the default because Supabase's built-in SMTP is rate-limited
+to a few messages an hour — our own sending arrives with Resend in Task 14.
+
+Both flags of the approval policy default to requiring admin sign-off. `--delegate-opportunities`
+and `--delegate-rewards` hand the respective decision to the business's own reps. Run
+`npm run seed:business` with no arguments for the full list.
+
+The scripts run under `tsx --conditions=react-server`. That is not decoration: `src/server/db.ts`
+carries `import "server-only"`, which throws under node's default resolution and resolves to an
+empty module under that condition — the same one Next sets for server components. Without it every
+script that reaches the database dies on import.
 
 ## Layout
 

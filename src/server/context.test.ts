@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   ForbiddenError,
   approvalPolicyFromBusiness,
+  assertBusinessActor,
   assertBusinessAdmin,
   assertSameBusiness,
   canPublishOpportunity,
@@ -98,6 +99,24 @@ describe("isBusinessAdmin / assertBusinessAdmin", () => {
     expect(() => assertBusinessAdmin(rep)).toThrow(ForbiddenError);
     expect(() => assertBusinessAdmin(advocate)).toThrow(ForbiddenError);
     expect(() => assertBusinessAdmin(staff)).toThrow(ForbiddenError);
+  });
+});
+
+describe("assertBusinessActor", () => {
+  it("passes an admin and a rep", () => {
+    expect(() => assertBusinessActor(admin)).not.toThrow();
+    expect(() => assertBusinessActor(rep)).not.toThrow();
+  });
+
+  it("refuses an advocate", () => {
+    // An advocate is the business's customer, not its staff. They share a
+    // businessId with the reps, so nothing but this check stops an advocate
+    // reading the staff list.
+    expect(() => assertBusinessActor(advocate)).toThrow(ForbiddenError);
+  });
+
+  it("refuses platform staff", () => {
+    expect(() => assertBusinessActor(staff)).toThrow(ForbiddenError);
   });
 });
 

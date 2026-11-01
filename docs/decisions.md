@@ -303,6 +303,39 @@ is the problem.
 
 ## Log
 
+**2026-11-01 — Task 5: businesses, memberships and onboarding scripts.**
+The `tenancy` module: `createBusiness` (platform staff only, business and first admin in one
+nested write), `addMember`/`listMembers`, `getApprovalPolicy`/`updateApprovalPolicy`,
+`grantPlatformStaff` and `resolvePlatformStaffActor`. 45 integration tests, and every authority
+guard was verified load-bearing by removing it and watching exactly one test fail.
+
+Four decisions worth recording. `addMember` takes no `businessId` — it comes from the actor, so
+"add a member to a business I do not administer" is not a request that can be expressed, which
+beats validating a caller-supplied id. `listMembers` and `getApprovalPolicy` require a _business_
+actor rather than any tenant context, because an advocate carries the same `businessId` as the
+reps and would otherwise be able to enumerate the sales team. `getApprovalPolicy` is readable by a
+rep, since the UI has to explain whether their action will wait for sign-off, while
+`updateApprovalPolicy` is admin-only: a rep who could delegate authority to reps would be granting
+it to themselves. And `resolvePlatformStaffActor` refuses rather than guessing between two staff
+members, mirroring `soleTenantContext` — the record of who onboarded a business is its only audit
+trail.
+
+The scripts are thin by construction. Their one untestable act is calling Supabase's admin API, so
+everything after it lives in `services/tenancy/onboard.ts` where tests cover it, including that a
+slug collision inside the wrapping transaction leaves no orphaned `User` able to sign in to
+nothing. **`provisionAuthUser` itself is unverified** — running it would create a user in the live
+project, which this sandbox cannot reach a database from anyway.
+
+Two things found on the way. Scripts need `tsx --conditions=react-server`, because `server-only`
+throws under node's default resolution; without it every script that touches the database dies on
+import. And `generateLink({ type: "invite" })` creates the user when absent and returns the link
+without sending it, which Supabase's reference confirms — though there are upstream reports of it
+refusing instead, noted in the code since the fallback only covers the already-registered case.
+
+Links are printed rather than emailed by default, a deliberate deviation from the plan's "sends a
+set-password link": Supabase's built-in SMTP allows a handful of messages an hour and our own
+sending is Task 14. `--send` asks Supabase to mail it.
+
 **2026-11-01 — Skimmed the prototype's latest and recorded what to carry over.**
 36 commits of product jamming since the rebuild was decided. Three things that matter: the
 user-facing noun became "quest" (copy only — the domain is still "opportunity" there); the reward

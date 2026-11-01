@@ -8,7 +8,9 @@ export default defineConfig({
     environment: "jsdom",
     globals: true,
     setupFiles: ["./src/test/setup.ts"],
-    include: ["src/**/*.{test,spec}.{ts,tsx}"],
+    // `scripts/` too: the onboarding scripts' pure parts (argument parsing)
+    // are worth testing, and leaving them out would quietly mean "untested".
+    include: ["{src,scripts}/**/*.{test,spec}.{ts,tsx}"],
     // Integration tests live in `vitest.integration.config.ts`. They need a
     // real database and a global setup, and `*.integration.test.ts` also
     // matches the include pattern above, so exclude them explicitly or

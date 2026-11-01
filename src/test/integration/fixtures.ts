@@ -79,3 +79,8 @@ export async function makeTenant() {
   ]);
   return { business, user, membership, advocate };
 }
+
+/** Grant a user Dealio-staff status. */
+export async function makePlatformStaff(userId: string) {
+  return testPrisma().platformStaff.create({ data: { userId } });
+}
