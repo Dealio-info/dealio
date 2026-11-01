@@ -78,9 +78,12 @@ Sign-in is Supabase Auth: magic link by default, with password and Google. Magic
 advocates sign in rarely, and a password set once and forgotten is friction that costs
 participation.
 
-`src/middleware.ts` refreshes the session and keeps signed-out visitors out of `/app` and
-`/advocate`. It checks only for a session, not roles — roles need the database, and middleware
-cannot reach it. Treat it as a convenience redirect; the service layer is the security boundary.
+`src/proxy.ts` refreshes the session and keeps signed-out visitors out of `/app` and `/advocate`.
+It checks only for a session, not roles — roles need the database, and it cannot reach one. Treat it
+as a convenience redirect; the service layer is the security boundary.
+
+It is called `proxy` because Next 16 renamed the `middleware` convention. Same behaviour, same
+`config.matcher`; the exported function is `proxy`.
 
 CI runs format, lint, typecheck, unit tests, integration tests and build on every push.
 

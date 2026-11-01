@@ -82,10 +82,11 @@ async function main() {
     `  quests need approval   ${business.requireAdminApprovalForOpportunities}`,
   );
   console.log(`  rewards need approval  ${business.requireAdminApprovalForRewards}`);
-  console.log(`  auth user              ${auth.wasCreated ? "created" : "existed"}`);
+  console.log(`  supabase auth id       ${auth.supabaseUserId}`);
   if (auth.actionLink) {
     console.log(
-      `\nSend the admin here to set a password (single use):\n  ${auth.actionLink}`,
+      `\nSend the admin here to set a password. Single use, and it replaces ` +
+        `any earlier link for this person:\n  ${auth.actionLink}`,
     );
   } else {
     console.log("\nNo link printed — Supabase was asked to email it instead.");

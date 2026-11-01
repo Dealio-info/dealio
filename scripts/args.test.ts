@@ -24,8 +24,24 @@ describe("parseArgs", () => {
     expect(parseArgs(["--name", "Acme Corp"])).toEqual({ name: "Acme Corp" });
   });
 
-  it("ignores positional arguments and a bare --", () => {
-    expect(parseArgs(["junk", "--", "--name", "Acme"])).toEqual({ name: "Acme" });
+  it("ignores a bare --, which npm leaves behind", () => {
+    expect(parseArgs(["--", "--name", "Acme"])).toEqual({ name: "Acme" });
+  });
+
+  it("refuses a leftover word rather than truncating a value", () => {
+    // What you get from `--name Mike Kamilos` without quotes. Taking "Mike"
+    // and dropping the rest would put a wrong name in the database silently.
+    expect(() => parseArgs(["--name", "Mike", "Kamilos"])).toThrow(ArgError);
+    expect(() => parseArgs(["--name", "Mike", "Kamilos"])).toThrow(/Kamilos/);
+    expect(() => parseArgs(["--name", "Mike", "Kamilos"])).toThrow(/quote it/);
+  });
+
+  it("names every leftover word", () => {
+    expect(() => parseArgs(["--name", "A", "B", "C"])).toThrow(/B C/);
+  });
+
+  it("refuses a stray word before any option", () => {
+    expect(() => parseArgs(["junk", "--name", "Acme"])).toThrow(ArgError);
   });
 
   it("returns nothing for no arguments", () => {

@@ -6,17 +6,21 @@ import { NextResponse, type NextRequest } from "next/server";
  * visitors out of the two application areas.
  *
  * Deliberately limited to "is there a valid session". It does **not** check
- * roles: that needs the database, which middleware cannot reach — it runs
- * before the app and must stay free of Prisma. Role and tenant checks belong in
- * the server components and services behind these routes, which is where
+ * roles: that needs the database, which this cannot reach — it runs before the
+ * app and must stay free of Prisma. Role and tenant checks belong in the server
+ * components and services behind these routes, which is where
  * `requireIdentity` and the authority helpers live.
  *
  * So treat this as a convenience redirect, not a security boundary. The real
  * boundary is the service layer.
+ *
+ * Named `proxy` rather than `middleware` because Next 16 renamed the
+ * convention; the file name, the exported function name and the behaviour are
+ * otherwise the same, and `config.matcher` still applies.
  */
 const PROTECTED_PREFIXES = ["/app", "/advocate"];
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(
