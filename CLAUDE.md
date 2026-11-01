@@ -172,10 +172,39 @@ application discipline for exactly these and lost real money to it:
   twice.
 - `advocates` is unique on `(businessId, email)`, never globally — the same person can advocate
   for two different customers.
+- Deny-all RLS is enabled on every application table, and the `anon` / `authenticated` grants on
+  `public` are revoked. That is a lock on Supabase's PostgREST, not a tenancy mechanism — see
+  below.
 
 When writing the trigger, do not set `USING ERRCODE` to anything in Postgres's 23xxx
 integrity-constraint class: Prisma translates those into a generic constraint error and the
 message is lost. The default `raise_exception` (P0001) passes through intact.
+
+### Supabase's second door
+
+The ESLint boundary governs our code. It says nothing about **PostgREST**, the REST API Supabase
+runs over the `public` schema, and Supabase grants `anon` and `authenticated` access to that schema
+by default. Tables our migrations create inherit the grant, so after the first deploy
+`GET /rest/v1/businesses` returned 200 to anyone holding the publishable key — which is public by
+design and ships in the browser bundle. Verified against the live project; the tables were empty,
+so nothing leaked.
+
+`20261101005003_lock_out_postgrest` closes it two ways: deny-all RLS on every table, and a REVOKE
+of those roles' grants (including default privileges, so new tables are covered). Either alone
+would do; both means a future migration that forgets one is still safe.
+
+Three things to keep straight:
+
+- **This is not a reversal of service-layer tenancy.** RLS here has deliberately **no policies** —
+  enabled with none, it denies everything to non-owner roles, while the table owner (the role
+  Prisma connects as) bypasses RLS entirely. It is a lock on a door we never open, not the
+  mechanism that scopes tenants. Do not start writing policies to "do tenancy properly"; that
+  splits the rules across two places, which is how the prototype got lost.
+- **New tables need the same treatment.** Prisma does not emit `ENABLE ROW LEVEL SECURITY`, so add
+  it by hand to the migration. `src/test/integration/postgrest-lockdown.integration.test.ts` fails
+  if you forget.
+- **If the app ever connects as a non-owner role**, the lock starts applying to us. The fix is a
+  `BYPASSRLS` grant or an owner connection — never disabling RLS.
 
 ### Testing layout
 
