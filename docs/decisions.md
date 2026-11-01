@@ -165,6 +165,36 @@ Notes for when this is implemented — recorded now so they are not rediscovered
 - **Failure with real cost.** Insufficient funds in the funding account is a normal operating
   condition, not an edge case. It needs a clear path for both the advocate and the admin.
 
+## Supabase specifics
+
+**Keys.** Use the newer `sb_publishable_…` and `sb_secret_…` keys. The legacy `anon` and
+`service_role` JWTs are deprecated. Env names are `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` and
+`SUPABASE_SECRET_KEY`; the secret one must never carry a `NEXT_PUBLIC_` prefix.
+
+**Email confirmation: off during development, on before the pilot.**
+
+Normally turning this off would be dangerous here — it lets someone sign up with an address they do
+not control, and the prototype's advocate-claim path matched on bare lowercased email, which made
+exactly that spoofable.
+
+It is safe for us because nothing trusts the email address:
+
+- Claiming an advocate invite requires the **token**, never an email match.
+- `resolveIdentity` matches advocate records by `userId` only, so an unclaimed invite grants nothing
+  regardless of whose email it names.
+- `ensureUser` keys on `supabaseUserId` and refuses to move an email between auth users.
+
+So an unverified signup produces an account with no tenant context and no access at all.
+
+**This must stay true.** Do not add an email-match fallback to invite claiming, however convenient
+it looks — that single shortcut is what would make this setting load-bearing again. Turn
+confirmation on before the pilot regardless, since it also stops typo'd addresses silently
+swallowing invites.
+
+**Connection.** Postgres goes through the shared pooler host (`…pooler.supabase.com`): transaction
+mode on 6543 for the app, session mode on 5432 for migrations. Prisma 7 takes both from
+`prisma.config.ts`, not from `schema.prisma`.
+
 ## Log
 
 **2026-10-31 — Task 3: tenant context and the service boundary.**

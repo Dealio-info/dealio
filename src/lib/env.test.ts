@@ -29,14 +29,14 @@ describe("publicEnv", () => {
 });
 
 describe("serverEnv", () => {
-  it("reads the service role key", () => {
-    vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "service-key");
-    expect(serverEnv.supabaseServiceRoleKey).toBe("service-key");
+  it("reads the secret key", () => {
+    vi.stubEnv("SUPABASE_SECRET_KEY", "sb_secret_example");
+    expect(serverEnv.supabaseSecretKey).toBe("sb_secret_example");
   });
 
-  it("throws when the service role key is absent", () => {
-    vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "");
-    expect(() => serverEnv.supabaseServiceRoleKey).toThrow(/SUPABASE_SERVICE_ROLE_KEY/);
+  it("throws when the secret key is absent", () => {
+    vi.stubEnv("SUPABASE_SECRET_KEY", "");
+    expect(() => serverEnv.supabaseSecretKey).toThrow(/SUPABASE_SECRET_KEY/);
   });
 
   it("defaults the app URL for local development", () => {

@@ -144,6 +144,12 @@ Known upstream noise: the integration suite prints a `pg` deprecation warning ab
 queries on one client. It comes from inside `@prisma/adapter-pg`'s transaction handling, not from
 our code — do not chase it. It is a reason to keep `pg` pinned to `^8`.
 
+⚠️ **Supabase's own setup snippets are written for Prisma 6 and will break this repo.** They tell
+you to put `url` and `directUrl` inside the `datasource` block and to use the `prisma-client-js`
+generator. Prisma 7 rejects both: the connection URL belongs in `prisma.config.ts`, and the
+generator is `prisma-client` with an `output` path. If a migration suddenly fails with
+`P1012 … datasource property 'url' is no longer supported`, someone pasted the old snippet.
+
 Prisma 7 specifics worth knowing: the connection URL lives in `prisma.config.ts` rather than in
 `schema.prisma`; the client is generated into `src/generated/prisma` (gitignored) instead of
 `node_modules`; and the runtime connects through the `@prisma/adapter-pg` driver adapter. Run

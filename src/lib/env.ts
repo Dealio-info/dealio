@@ -38,9 +38,12 @@ export const serverEnv = {
   /**
    * Bypasses every authorization check in Supabase. Only for admin operations
    * that have already been authorized by our own service layer.
+   *
+   * This is Supabase's newer `sb_secret_…` key. It replaces the legacy
+   * `service_role` JWT, which is deprecated.
    */
-  get supabaseServiceRoleKey(): string {
-    return required(process.env.SUPABASE_SERVICE_ROLE_KEY, "SUPABASE_SERVICE_ROLE_KEY");
+  get supabaseSecretKey(): string {
+    return required(process.env.SUPABASE_SECRET_KEY, "SUPABASE_SECRET_KEY");
   },
   /** Used to build invite and magic links. */
   get appUrl(): string {

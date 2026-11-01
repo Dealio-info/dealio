@@ -95,6 +95,16 @@ and the harness refuses to run if they match.
 Any Postgres will do — `npx prisma dev`, Docker (`docker run --rm -p 5432:5432 -e
 POSTGRES_PASSWORD=postgres postgres:16`), or a local install.
 
+**Keep `TEST_DATABASE_URL` pointed at a local throwaway database, never at Supabase.** The harness
+truncates every table between tests; the only guard is that it refuses to run when the two URLs
+match, which would not save a Supabase URL set by mistake.
+
+### Applying migrations
+
+`npm run db:deploy` needs a direct TCP connection to Postgres on 5432. Run it from a machine or CI
+runner that has one — a Claude Code cloud session tunnels HTTPS only, so Postgres ports are
+unreachable there and `prisma migrate` will fail with `P1001`.
+
 ## Layout
 
 ```
