@@ -82,6 +82,12 @@ UI in the MVP; platform staff onboards businesses with a seed script.
   `@layer base` — an unlayered `body` rule overrides layered ones and breaks shadcn theming.
 - **Currency name** lives only in `src/lib/currency.ts`. Never hardcode "coin" anywhere else —
   the name is not final.
+- **User-facing nouns** live only in `src/lib/terms.ts`, for the same reason. The domain keeps its
+  own names — the model is `Opportunity`, the table is `opportunities`, the enum is
+  `OpportunityStatus` — while the product calls that thing a **quest**. Use the domain name in
+  code and `TERMS` for anything a person reads: headings, buttons, emails, toasts, empty states.
+  Never hardcode "quest" in a component or template. Do not rename the domain to match the copy:
+  the copy has already moved once and the schema should not follow it.
 - **Money and currency amounts are integers.** No floats.
 - **Service signature** is `fn(ctx: ServiceContext, input)`, where `ServiceContext` is
   `{ db, actor }` from `src/server/context.ts`. The database handle is explicit, not the `prisma`

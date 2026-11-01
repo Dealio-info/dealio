@@ -296,3 +296,70 @@ describe("money constraints", () => {
     expect(updated.influencedRevenueCents).toBe(12_345_678_90n);
   });
 });
+
+describe("redemption snapshots", () => {
+  it("keeps the reward's name as it was when the redemption was requested", async () => {
+    const { business, advocate } = await makeTenant();
+    const reward = await prisma.reward.create({
+      data: { businessId: business.id, name: "$25 Coffee Card", cost: 5 },
+    });
+
+    const redemption = await prisma.redemption.create({
+      data: {
+        businessId: business.id,
+        advocateId: advocate.id,
+        rewardId: reward.id,
+        rewardName: reward.name,
+        cost: reward.cost,
+      },
+    });
+
+    // The catalog is edited afterwards: renamed and repriced.
+    await prisma.reward.update({
+      where: { id: reward.id },
+      data: { name: "$50 Coffee Card", cost: 10 },
+    });
+
+    const after = await prisma.redemption.findUniqueOrThrow({
+      where: { id: redemption.id },
+    });
+    expect(after.rewardName).toBe("$25 Coffee Card");
+    expect(after.cost).toBe(5);
+  });
+
+  it("will not record a redemption without the reward's name", async () => {
+    const { business, advocate } = await makeTenant();
+    const reward = await prisma.reward.create({
+      data: { businessId: business.id, name: "Gift Card", cost: 5 },
+    });
+
+    await expect(
+      prisma.$executeRaw`
+        INSERT INTO redemptions
+          ("id", "businessId", "advocateId", "rewardId", "cost", "updatedAt")
+        VALUES (gen_random_uuid(), ${business.id}::uuid, ${advocate.id}::uuid,
+                ${reward.id}::uuid, 5, now())
+      `,
+    ).rejects.toThrow(/rewardName/);
+  });
+
+  it("refuses to delete a reward that a redemption still points at", async () => {
+    const { business, advocate } = await makeTenant();
+    const reward = await prisma.reward.create({
+      data: { businessId: business.id, name: "Gift Card", cost: 5 },
+    });
+    await prisma.redemption.create({
+      data: {
+        businessId: business.id,
+        advocateId: advocate.id,
+        rewardId: reward.id,
+        rewardName: reward.name,
+        cost: reward.cost,
+      },
+    });
+
+    // Soft-deactivation is the supported path; a hard delete must not orphan
+    // history. The prototype made its FK `ON DELETE SET NULL` instead.
+    await expect(prisma.reward.delete({ where: { id: reward.id } })).rejects.toThrow();
+  });
+});
