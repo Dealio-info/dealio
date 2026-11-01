@@ -84,9 +84,12 @@ async function main() {
   console.log(`  rewards need approval  ${business.requireAdminApprovalForRewards}`);
   console.log(`  supabase auth id       ${auth.supabaseUserId}`);
   if (auth.actionLink) {
+    console.log("\nNo email was sent. Send the admin this link:");
+    console.log(`  ${auth.actionLink}`);
     console.log(
-      `\nSend the admin here to set a password. Single use, and it replaces ` +
-        `any earlier link for this person:\n  ${auth.actionLink}`,
+      "Single use, expires in about a day, and it replaces any earlier link\n" +
+        "for this person. Pass --send to have Supabase email it instead —\n" +
+        "though that only works for an address it has not seen before.",
     );
   } else {
     console.log("\nNo link printed — Supabase was asked to email it instead.");
