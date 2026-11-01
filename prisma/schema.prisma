@@ -381,9 +381,16 @@ model Redemption {
   advocateId String @db.Uuid
   rewardId   String @db.Uuid
 
-  /// Snapshot of the reward's cost when requested, so later edits to the
-  /// catalog cannot change what was already agreed. Integer currency units.
-  cost   Int
+  /// Snapshot of the reward as it stood when this was requested, so later
+  /// edits to the catalog cannot change what was already agreed. `rewardId`
+  /// still points at the catalog row — these are the terms, not a cache.
+  ///
+  /// Cost is in integer currency units. The name is here for the same reason:
+  /// renaming a reward must not silently re-label every past redemption, which
+  /// is what a join would do.
+  cost       Int
+  rewardName String
+
   status RedemptionStatus @default(REQUESTED)
 
   /// The provider's order id. Unique so a replayed webhook cannot double-write.

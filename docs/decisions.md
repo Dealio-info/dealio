@@ -46,6 +46,7 @@ entry exists is so the same question is not answered twice.
 | Currency          | Append-only ledger, balance derived as a sum. No mutable balance column                                                                                                                                                                     |
 | Testing           | Unit plus integration against a real throwaway Postgres, written test-first                                                                                                                                                                 |
 | Advocate identity | `Advocate` is unique on `(businessId, email)`, not globally — the same person can be an advocate for two different customers. Claiming an invite requires a token                                                                           |
+| Naming            | Domain names stay (`Opportunity`, `opportunities`, `OpportunityStatus`); user-facing nouns live in `src/lib/terms.ts`, where the product's word is **quest**. Copy has moved once already, so the schema does not follow it                 |
 
 ---
 
@@ -224,8 +225,11 @@ enum or event type moved: `opportunities`, `opportunity_id`, `opportunity_create
 `replace(description, 'Opportunity', 'Quest')` over `activity_log`. So "quest" is presentation and
 "opportunity" is still the domain term there.
 
-Our `Opportunity` model, `OpportunityStatus` and `OpportunityEvent` are unchanged pending a
-decision. "Coins" was not renamed.
+**Decided: copy only here too.** `Opportunity` stays the domain name and "quest" lives in
+`src/lib/terms.ts`, alongside the currency name and for the same reason — a rename is one line
+rather than a migration. A domain rename would have been cheapest now, with no data and no feature
+code, and was considered on that basis; it was declined because the word has already changed once
+and nothing says it has stopped. "Coins" was not renamed.
 
 ### Reward catalog: digital gift cards, and a first price point
 
@@ -246,8 +250,15 @@ Deleting a reward used to break historical redemptions. The prototype fixed it b
 We are already safe against the orphan — `Reward.isActive` soft-deactivates and `Redemption.rewardId`
 is required, so Postgres refuses to delete a referenced reward. And `Redemption.cost` already
 snapshots the price, for the stated reason that later catalog edits must not change what was already
-agreed. But the **name** is not snapshotted, and the same reasoning applies to it: rename a reward
-and every past redemption silently re-labels itself.
+agreed. But the **name** was not snapshotted, and the same reasoning applies to it: rename a reward and
+every past redemption silently re-labels itself.
+
+**Decided: snapshot it.** `Redemption.rewardName` is required, added in
+`20261101021727_snapshot_reward_name`. The migration adds a `NOT NULL` column with no default, so it
+would fail against a non-empty `redemptions` table — correct for a field that records agreed terms,
+where backfilling an empty string would be worse than stopping. Three integration tests cover it:
+the snapshot survives a rename and a reprice, the column cannot be bypassed with raw SQL, and a
+reward with redemptions against it cannot be hard-deleted.
 
 ### UX patterns worth taking
 
