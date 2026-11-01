@@ -24,7 +24,7 @@ export async function supabaseServer() {
             cookieStore.set(name, value, options);
           }
         } catch {
-          // Server components cannot set cookies. That is fine: the middleware
+          // Server components cannot set cookies. That is fine: `src/proxy.ts`
           // refreshes the session on every request, so a read-only render here
           // is not a problem worth surfacing.
         }

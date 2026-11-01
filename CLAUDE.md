@@ -135,7 +135,7 @@ Supabase's admin API; it has not been run against a live project yet.
 
 **Through Task 4, pending credentials.** Schema, tenant context, authority helpers, the
 database-import boundary, and Supabase auth wiring are all in place: `src/server/auth.ts` bridges a
-session to a domain `Identity`, `src/middleware.ts` refreshes the session and gates `/app` and
+session to a domain `Identity`, `src/proxy.ts` refreshes the session and gates `/app` and
 `/advocate`, `/auth/callback` exchanges the code, and `/sign-in` offers magic link, password and
 Google. The flow has **not been exercised end to end** — that needs real Supabase credentials.
 
@@ -143,9 +143,11 @@ Two things to know about auth:
 
 - Use `getUser()`, never `getSession()`, for any authorization decision. `getSession()` trusts the
   cookie; `getUser()` validates the token with Supabase.
-- The middleware checks only "is there a session". It deliberately does **not** check roles, because
-  that needs the database and middleware must stay free of Prisma. It is a convenience redirect, not
-  a security boundary — the service layer is the boundary.
+- `src/proxy.ts` checks only "is there a session". It deliberately does **not** check roles, because
+  that needs the database and it must stay free of Prisma. It is a convenience redirect, not a
+  security boundary — the service layer is the boundary. It is named `proxy`, not `middleware`:
+  Next 16 renamed the convention and the old name warns on every build. Same behaviour, same
+  `config.matcher`, and the exported function is `proxy` too.
 
 **Scripts run under `tsx --conditions=react-server`.** `server-only` resolves to its real module —
 which throws — under node's default conditions, and to an empty one under `react-server`, which is
