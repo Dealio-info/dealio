@@ -42,7 +42,7 @@ entry exists is so the same question is not answered twice.
 | UI components     | shadcn/ui, `base-vega` style, built on Base UI rather than Radix. Class merging via `cn` (official shadcn package, replaces `clsx` + `tailwind-merge`). Components are copied into `src/components/ui/` and owned by us                     |
 | Advocate auth     | Hybrid — magic link primary, with password and Google also available                                                                                                                                                                        |
 | Roles             | All four modeled; UI for business admin and advocate only in the MVP. Platform staff is a **separate table**, never a role value                                                                                                            |
-| Tenant isolation  | Service layer, not RLS — sound only because the browser has no database access. Enforced by ESLint                                                                                                                                          |
+| Tenant isolation  | Service layer, not RLS — sound only because the browser has no database access. Enforced by ESLint. RLS **is** enabled, deny-all with no policies, purely to lock Supabase's PostgREST out; it is not the tenancy mechanism                 |
 | Currency          | Append-only ledger, balance derived as a sum. No mutable balance column                                                                                                                                                                     |
 | Testing           | Unit plus integration against a real throwaway Postgres, written test-first                                                                                                                                                                 |
 | Advocate identity | `Advocate` is unique on `(businessId, email)`, not globally — the same person can be an advocate for two different customers. Claiming an invite requires a token                                                                           |
@@ -191,11 +191,36 @@ it looks — that single shortcut is what would make this setting load-bearing a
 confirmation on before the pilot regardless, since it also stops typo'd addresses silently
 swallowing invites.
 
+**PostgREST is a second door, and it was open.** Supabase runs a REST API over the `public`
+schema and grants `anon` and `authenticated` access to it by default, so tables created by our
+migrations were served over HTTPS to anyone holding the publishable key. Confirmed against the live
+project — `GET /rest/v1/businesses` returned 200 — with empty tables, so nothing leaked.
+
+This is the prototype's root defect (the browser holding direct database access) arriving through a
+door the ESLint boundary cannot see, which is why it is worth stating plainly: **the architecture's
+load-bearing rule is a property of the deployment, not only of our code.** Checking the lint rule
+was never sufficient on its own.
+
+`20261101005003_lock_out_postgrest` enables deny-all RLS on every table and revokes both roles'
+grants and default privileges. No policies, deliberately: the table owner bypasses RLS, so Prisma
+is unaffected, and tenancy stays in one place. A new table must enable RLS in its own migration;
+an integration test fails if it does not.
+
 **Connection.** Postgres goes through the shared pooler host (`…pooler.supabase.com`): transaction
 mode on 6543 for the app, session mode on 5432 for migrations. Prisma 7 takes both from
 `prisma.config.ts`, not from `schema.prisma`.
 
 ## Log
+
+**2026-11-01 — Closed Supabase's PostgREST exposure.**
+The init migration deployed cleanly to Supabase, and a probe of the project immediately afterwards
+found every table readable over `/rest/v1/` with nothing but the publishable key. Supabase grants
+`anon` and `authenticated` access to the `public` schema by default and our tables inherited it.
+Tables were empty, so nothing leaked. Fixed by `20261101005003_lock_out_postgrest` — deny-all RLS
+plus a REVOKE of both roles' grants and default privileges — with a regression test that fails if a
+new table arrives without RLS or if anyone adds a policy. Worth recording the lesson rather than
+just the fix: the boundary we rely on is enforced by the lint rule _and_ by the deployment, and
+only one of those was being checked.
 
 **2026-10-31 — Task 3: tenant context and the service boundary.**
 `src/server/context.ts` holds the actor model and all authority decisions, pure and exhaustively

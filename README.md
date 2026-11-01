@@ -135,6 +135,13 @@ This is what makes service-layer tenant isolation sound, and it is a direct resp
 prototype, where the browser held direct database access and every cross-tenant defect followed
 from it. [`CLAUDE.md`](CLAUDE.md) has the full set of rules.
 
+The rule is a property of the deployment as much as of the code. Supabase runs **PostgREST** over
+the `public` schema and grants it to `anon` and `authenticated` by default, which the lint rule
+cannot see — so every table is also locked with deny-all RLS and those grants are revoked. No
+policies: tenancy stays in the service layer, and the lock exists only to shut a door we never
+open. **A new table must enable RLS in its own migration**; an integration test fails if it does
+not.
+
 ## Where decisions live
 
 [`docs/decisions.md`](docs/decisions.md) is the running record — what is settled, what is still
