@@ -21,7 +21,8 @@
     "test:integration": "vitest run --config vitest.integration.config.ts",
     "test:all": "npm run test && npm run test:integration",
     "db:migrate": "prisma migrate dev",
-    "db:deploy": "prisma migrate deploy"
+    "db:deploy": "prisma migrate deploy",
+    "verify:lockdown": "bash scripts/verify-postgrest-locked.sh"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",

@@ -67,6 +67,7 @@ npm run dev           # http://localhost:3000
 | `npm run db:migrate`       | Create and apply a migration in development    |
 | `npm run db:deploy`        | Apply committed migrations (CI and production) |
 | `npm run test:integration` | Integration tests against a real Postgres      |
+| `npm run verify:lockdown`  | Check a live Supabase project is locked down   |
 | `npm run test:all`         | Unit then integration                          |
 
 ### Auth
@@ -104,6 +105,15 @@ match, which would not save a Supabase URL set by mistake.
 `npm run db:deploy` needs a direct TCP connection to Postgres on 5432. Run it from a machine or CI
 runner that has one — a Claude Code cloud session tunnels HTTPS only, so Postgres ports are
 unreachable there and `prisma migrate` will fail with `P1001`.
+
+Check the migration count it prints. `No pending migrations to apply` means nothing was applied,
+which is also what you see when your checkout is behind the branch holding the migration.
+
+Afterwards, run `npm run verify:lockdown`. It asks the live project for every table over PostgREST
+using the publishable key and fails unless each one is refused. It is a deploy check, not a test:
+the integration suite proves what the migrations do on any Postgres, and this proves they reached
+this project. It fails closed, so a missing key or an unfamiliar response is a failure rather than
+a pass.
 
 ## Layout
 
