@@ -127,6 +127,18 @@ and outcome handlers use deterministic event IDs so retries are safe.
 Next.js 16 + React 19 + TypeScript + Tailwind 4, shadcn/ui on Base UI, Vitest 5, ESLint 9 (flat
 config) with the database boundary, and Prisma 7 with the full domain schema migrated.
 
+**Through Task 7.** The `opportunities` module: `createOpportunity`, `transitionOpportunity`,
+`listOpportunities`/`getOpportunity`, and the lifecycle state machine in `transitions.ts`. Every
+legal edge and its guard live in one table there; an edge absent from it does not exist, and
+`transitions.test.ts` checks all 8 × 8 × 6 × 2 combinations against a spec written out
+independently, so adding an edge to the implementation fails the test until it is added to the spec
+too.
+
+⚠️ **`VERIFIED → REWARDED` moves no currency yet.** Crediting the ledger inside that same
+transaction is Task 8. Until it lands, an opportunity can read `REWARDED` while the advocate's
+balance is zero — so nothing should treat the status as evidence of payment. The balance is
+`SUM(LedgerEntry.delta)`, always.
+
 **Through Task 6.** Task 6 added the `advocates` module — `inviteAdvocate`, `claimInvite`,
 `listAdvocates` — with hashed single-use invite tokens. `claimInvite` takes a `Db` and a `userId`
 rather than a `ServiceContext`, because the person claiming has no tenant context yet; the invite is

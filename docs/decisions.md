@@ -303,6 +303,37 @@ is the problem.
 
 ## Log
 
+**2026-11-02 — Task 7: opportunities and the lifecycle state machine.**
+`transitions.ts` holds every legal edge and its guard as one table; an edge that is not in the table
+does not exist, so there is no default-allow. `transitions.test.ts` asserts all 768 combinations of
+(from, to, actor, policy) against a specification written out longhand rather than derived from that
+table — deriving it would only prove the code equals itself.
+
+Decisions worth keeping. Verification and rewarding share one guard
+(`requireAdminApprovalForRewards`): verification is the factual claim that justifies the payout, so
+letting a rep verify while reserving the reward for an admin would make the admin a rubber stamp.
+Ownership is two separate flags, `isCreator` and `isAssignedAdvocate`, because a rep owning an
+opportunity and an advocate owning one are different relationships that share a word, and one
+boolean is how an advocate passes a check written for a rep. `VERIFIED → CANCELLED` is admin-only
+and is the last clean exit, since no currency has moved; after `REWARDED` the only correction is an
+appended ledger adjustment.
+
+Creating and publishing stay separate even for a rep allowed to publish, because the policy can
+change in between and the transition is where it is read. An advocate may decline after accepting —
+someone who said yes and then cannot deliver needs a way to say so.
+
+Prisma accepts a non-unique field in `update`'s `where`, which turns the status change, its
+timestamp and its `OpportunityEvent` into one atomic nested write carrying its own compare-and-swap.
+A concurrent second attempt gets P2025 and a conflict rather than overwriting the first; the held-lock
+technique from Task 6 covers it.
+
+All six guards were mutation-tested with assertions that the mutation applied: authority, legal-edge
+shape, the compare-and-swap, advocate scoping, tenant scoping, and the influenced-revenue
+restriction. Each is caught by at least one test.
+
+**Not finished:** `VERIFIED → REWARDED` writes no ledger entry yet. That is Task 8, and until then
+the status is not evidence of payment.
+
 **2026-11-01 — Auth confirmed end to end against the live project.**
 The last unverified link in Task 4 and Task 5. `provisionAuthUser` really does create a Supabase
 auth user, and a link it mints really does sign someone in. Nothing in the flow needed changing.
