@@ -46,6 +46,7 @@ entry exists is so the same question is not answered twice.
 | Currency          | Append-only ledger, balance derived as a sum. No mutable balance column                                                                                                                                                                     |
 | Testing           | Unit plus integration against a real throwaway Postgres, written test-first                                                                                                                                                                 |
 | Advocate identity | `Advocate` is unique on `(businessId, email)`, not globally — the same person can be an advocate for two different customers. Claiming an invite requires a token                                                                           |
+| Business home     | `/app` leads with a dashboard, with Advocates, Quests, Rewards and Settings as siblings. Confirmed after walking the shell. The wordmark returns there, so the Dashboard tab is a convenience rather than the only way back                 |
 | Naming            | Domain names stay (`Opportunity`, `opportunities`, `OpportunityStatus`); user-facing nouns live in `src/lib/terms.ts`, where the product's word is **quest**. Copy has moved once already, so the schema does not follow it                 |
 
 ---
