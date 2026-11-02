@@ -77,6 +77,10 @@ UI in the MVP; platform staff onboards businesses with a seed script.
   chrome, and the `brand-` tokens in `globals.css` (`bg-brand-green`) for brand surfaces. Never
   declare an un-namespaced `--color-*` that shadcn also defines — its `@theme inline` block comes
   later in the file and will silently win.
+- **Never write a literal colour in a component.** No `bg-blue-500`, no `text-[#16c172]`, no hex in
+  a style attribute. The MVP is built deliberately theme-neutral and the palette lands at the end,
+  from the business lead — which only stays a one-file edit if every colour reference goes through a
+  role token. A single literal is a thing someone has to find later. See `docs/brand-brief.md`.
 - **Dark mode is class-based** (`.dark`, via `@custom-variant dark`). Do not add
   `prefers-color-scheme` rules; they compete with it. And keep `body` colors inside
   `@layer base` — an unlayered `body` rule overrides layered ones and breaks shadcn theming.
@@ -127,17 +131,24 @@ and outcome handlers use deterministic event IDs so retries are safe.
 Next.js 16 + React 19 + TypeScript + Tailwind 4, shadcn/ui on Base UI, Vitest 5, ESLint 9 (flat
 config) with the database boundary, and Prisma 7 with the full domain schema migrated.
 
+**Through Task 8.** The `rewards` module: `creditForOpportunity`, `getBalance`,
+`listLedgerEntries`, `getOutstandingLiability`. `VERIFIED → REWARDED` now credits the advocate in
+the same transaction as the status change — invariant 1 — so a reward cannot read as paid without
+the ledger row that pays it. Crediting is a consequence of reaching `REWARDED` and never a route to
+it: `creditForOpportunity` refuses an opportunity in any other status.
+
+`inTransaction` in `src/server/db.ts` is what makes that composition safe. A `Db` may be a client,
+which can open a transaction, or a transaction client, which cannot — and Postgres has no nested
+transactions. So the handle is asked which it is. Use it rather than requiring callers to remember
+to wrap, and note **both of its branches need testing**: a test that passes a transaction client in
+only exercises the join and stays green even if the helper never opens one.
+
 **Through Task 7.** The `opportunities` module: `createOpportunity`, `transitionOpportunity`,
 `listOpportunities`/`getOpportunity`, and the lifecycle state machine in `transitions.ts`. Every
 legal edge and its guard live in one table there; an edge absent from it does not exist, and
 `transitions.test.ts` checks all 8 × 8 × 6 × 2 combinations against a spec written out
 independently, so adding an edge to the implementation fails the test until it is added to the spec
 too.
-
-⚠️ **`VERIFIED → REWARDED` moves no currency yet.** Crediting the ledger inside that same
-transaction is Task 8. Until it lands, an opportunity can read `REWARDED` while the advocate's
-balance is zero — so nothing should treat the status as evidence of payment. The balance is
-`SUM(LedgerEntry.delta)`, always.
 
 **Through Task 6.** Task 6 added the `advocates` module — `inviteAdvocate`, `claimInvite`,
 `listAdvocates` — with hashed single-use invite tokens. `claimInvite` takes a `Db` and a `userId`
@@ -175,6 +186,14 @@ Two things to know about auth:
   security boundary — the service layer is the boundary. It is named `proxy`, not `middleware`:
   Next 16 renamed the convention and the old name warns on every build. Same behaviour, same
   `config.matcher`, and the exported function is `proxy` too.
+
+**`server-only` bites tests too, and the fix is narrow.** Both Vitest configs alias `server-only`
+to `src/test/server-only-stub.ts`, because its real entry point throws unless resolved under the
+`react-server` condition — which nothing sets in a test run. Any service that imports `@/server/db`
+as a _value_ (anything using `inTransaction`) fails at import time without it. Setting
+`react-server` globally for the test run was tried and broke unrelated dependencies that ship a
+different build under that condition, so the alias covers exactly one package. The marker's real
+job is to fail a browser bundle, and `next build` still enforces that.
 
 **Scripts run under `tsx --conditions=react-server`.** `server-only` resolves to its real module —
 which throws — under node's default conditions, and to an empty one under `react-server`, which is
