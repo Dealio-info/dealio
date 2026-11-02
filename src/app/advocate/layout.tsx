@@ -28,6 +28,7 @@ export default async function AdvocateLayout({
   return (
     <NavShell
       items={NAV}
+      home="/advocate"
       badge={
         <span className="text-muted-foreground border-border rounded-full border px-2 py-0.5 text-xs">
           {capitalize(TERMS.advocate.one)}

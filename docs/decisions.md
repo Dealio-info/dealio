@@ -303,6 +303,26 @@ is the problem.
 
 ## Log
 
+**2026-11-02 — Dark mode ships after all, and a nav bug found by using it.**
+Reviewing the shell turned up a real defect: the Dashboard tab stayed highlighted on every page,
+alongside whichever tab was actually current. A `startsWith` check is wrong as soon as one href
+prefixes another, and `/app` prefixes all four sub-pages. Now longest-match, extracted to
+`src/components/nav/active.ts` with eight tests — nav highlighting looks too trivial to test right
+up until it is wrong on every screen. The wordmark also now returns to the audience's own home
+rather than the marketing page, which is the "way back to the dashboard" the tab was failing to be.
+
+Dark mode was previously decided as token-ready but not shipped; the user asked for a toggle, so it
+ships: Light/Dark/System via `next-themes`, persisted, with no flash on first paint. Verified in a
+real browser rather than reasoned about — the class changes, survives a reload, and a freshly opened
+page already carries it.
+
+Building it exposed a flaw in the style guide. It rendered everything twice, light and dark side by
+side, which worked only while there was no global theme. With one, the "light" pane cannot escape
+the ancestor `.dark` — the variant is `&:is(.dark *)`, so there is no light island — and it silently
+went dark while still being labelled Light. The pairs were a workaround for the missing toggle, so
+they are gone: the guide renders once and the toggle drives it, which is both simpler and honest
+about what the app does.
+
 **2026-11-02 — The design pass: a shell, a style guide, and a lint rule.**
 Built between Tasks 8 and 9 so the UI tasks are composition rather than invention.
 

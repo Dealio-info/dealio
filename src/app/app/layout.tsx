@@ -32,7 +32,7 @@ export default async function BusinessLayout({
   await requireIdentity();
 
   return (
-    <NavShell items={NAV} trailing={<SignOutButton />}>
+    <NavShell items={NAV} home="/app" trailing={<SignOutButton />}>
       {children}
     </NavShell>
   );
