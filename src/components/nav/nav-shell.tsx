@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { isActive } from "./active";
+import { ThemeToggle } from "./theme-toggle";
 
 /**
  * `href` borrows Link's own type rather than using `string`. Next 16 checks
@@ -25,22 +27,32 @@ export type NavItem = {
  */
 export function NavShell({
   items,
+  home,
   badge,
   trailing,
   children,
 }: {
   items: readonly NavItem[];
+  /**
+   * Where the wordmark goes. The audience's own home, not `/` — a signed-in
+   * person clicking the logo wants their dashboard, not the marketing page.
+   */
+  home: React.ComponentProps<typeof Link>["href"];
   badge?: React.ReactNode;
   trailing?: React.ReactNode;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const hrefs = items.map((i) => String(i.href));
 
   return (
     <div className="flex min-h-screen flex-col">
       <header className="bg-background/95 supports-[backdrop-filter]:bg-background/80 sticky top-0 z-40 border-b backdrop-blur">
         <div className="mx-auto flex h-14 w-full max-w-6xl items-center gap-4 px-4">
-          <Link href="/" className="font-semibold tracking-tight">
+          <Link
+            href={home}
+            className="hover:text-foreground/80 font-semibold tracking-tight transition-colors"
+          >
             Dealio
           </Link>
           {badge}
@@ -50,7 +62,7 @@ export function NavShell({
           >
             {items.map((item) => {
               const href = String(item.href);
-              const active = pathname === href || pathname.startsWith(`${href}/`);
+              const active = isActive(pathname, href, hrefs);
               return (
                 <Link
                   key={href}
@@ -68,6 +80,7 @@ export function NavShell({
               );
             })}
           </nav>
+          <ThemeToggle />
           {trailing}
         </div>
       </header>

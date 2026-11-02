@@ -1,5 +1,6 @@
 "use client";
 
+import { useTheme } from "next-themes";
 import { Toaster as Sonner, type ToasterProps } from "sonner";
 import {
   CircleCheckIcon,
@@ -10,12 +11,7 @@ import {
 } from "lucide-react";
 
 const Toaster = ({ ...props }: ToasterProps) => {
-  // shadcn's generated version reads the active theme from `next-themes`. We
-  // ship no global theme toggle in the MVP — the palette is not decided yet and
-  // dark mode is token-ready rather than shipped — so that dependency was
-  // dropped and this follows the OS preference directly. If a real theme
-  // switcher ever lands, this is the line that needs to read from it.
-  const theme = "system";
+  const { theme = "system" } = useTheme();
 
   return (
     <Sonner

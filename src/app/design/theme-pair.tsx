@@ -1,15 +1,16 @@
-import { cn } from "@/lib/utils";
-
 /**
- * Renders the same thing twice, light and dark, side by side.
+ * A titled section of the style guide.
  *
- * There is no theme toggle in the app: the palette is not decided, and shipping
- * a user-facing switcher would double the surface to review for an MVP that may
- * not want one. But the `.dark` tokens exist and leaving them unexercised is
- * how they rot — so the gallery applies `.dark` to a container instead, which
- * is all the class ever does.
+ * This used to render everything twice, light and dark side by side, because
+ * there was no way to switch themes. There is now, and the pairs had to go: a
+ * nested "light" pane cannot escape an ancestor `.dark` — the dark variant is
+ * defined as `&:is(.dark *)` — so with the page in dark mode both panes went
+ * dark and the left one lied about which theme it was showing.
+ *
+ * Rendering once and letting the real toggle drive it is both simpler and
+ * honest: what you see here is exactly what the app renders.
  */
-export function ThemePair({
+export function Section({
   title,
   description,
   children,
@@ -26,26 +27,7 @@ export function ThemePair({
           <p className="text-muted-foreground max-w-prose text-sm">{description}</p>
         )}
       </div>
-      <div className="grid gap-px overflow-hidden rounded-lg border md:grid-cols-2">
-        <Pane>{children}</Pane>
-        <Pane dark>{children}</Pane>
-      </div>
+      <div className="bg-card space-y-4 rounded-lg border p-5">{children}</div>
     </section>
-  );
-}
-
-function Pane({ dark, children }: { dark?: boolean; children: React.ReactNode }) {
-  return (
-    <div
-      className={cn(
-        "bg-background text-foreground space-y-4 p-5",
-        dark && "dark border-l",
-      )}
-    >
-      <p className="text-muted-foreground text-[11px] font-medium tracking-widest uppercase">
-        {dark ? "Dark" : "Light"}
-      </p>
-      {children}
-    </div>
   );
 }

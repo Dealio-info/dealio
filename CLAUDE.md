@@ -137,12 +137,17 @@ config) with the database boundary, and Prisma 7 with the full domain schema mig
 **Design pass (between Tasks 8 and 9).** The app shell, the shared components and the rules that
 keep the theme swappable.
 
-- **`/design` is the living style guide.** Every token and component, rendered light and dark side
-  by side. Review the design by using that page, not by reading about it — and when adding a
-  component, add it there too, or it stops being the answer to "what does this look like".
+- **`/design` is the living style guide.** Every token and component, rendered once and driven by
+  the real theme toggle — so it shows what the app renders rather than a preview of it. Review the
+  design by using that page, and when adding a component add it there too, or it stops being the
+  answer to "what does this look like".
 - **Two shells, not one.** `src/app/app/layout.tsx` and `src/app/advocate/layout.tsx` have visibly
   different chrome because they serve different people. Both call `requireIdentity`; the proxy is a
-  redirect, not the boundary.
+  redirect, not the boundary. The wordmark links to the audience's own home, not `/` — a signed-in
+  person clicking the logo wants their dashboard, not the marketing page.
+- **Nav highlighting is longest-match**, in `src/components/nav/active.ts` with its own tests. A
+  plain `startsWith` is wrong the moment one href prefixes another: `/app` prefixes
+  `/app/advocates`, so the dashboard tab stayed lit everywhere and two tabs read as active at once.
 - **Shared product components** live in `src/components/app/`: `StatusBadge`, `CurrencyAmount`,
   `PageHeader`, `EmptyState`, `Stat`. Compose these rather than restyling a heading per page.
 - **Status colour is five roles, not eight hues** — `status-waiting|active|done|success|failed`,
@@ -150,9 +155,16 @@ keep the theme swappable.
   `@theme`, where a fixed value cannot work on both a white and a near-black background, and
   "Rewarded" was invisible in dark mode. Anything that must read across themes belongs with the
   theme-responsive variables, never with the brand constants.
-- **Dark mode is previewed, not shipped.** `.dark` is applied to a container on `/design` and
-  nowhere else; there is no user-facing toggle and no `next-themes`. The tokens stay exercised
-  without doubling the review surface for an MVP whose palette is undecided.
+- **Dark mode ships, with a Light/Dark/System toggle** via `next-themes`, `attribute="class"`. Two
+  details that are easy to get wrong: `<html>` carries `suppressHydrationWarning` because the
+  blocking script sets `.dark` before React hydrates — that mismatch is the point, since without it
+  the page flashes the wrong theme — and the toggle's own icon is swapped by CSS (`dark:hidden` /
+  `hidden dark:block`) rather than chosen in JavaScript, because the server cannot know which theme
+  the browser will resolve. The usual `mounted` flag fixes that by rendering the wrong icon first,
+  and `react-hooks` rejects it anyway.
+- **A nested element cannot escape an ancestor `.dark`.** The variant is `&:is(.dark *)`, so there
+  is no "light island" inside a dark page. The style guide used to render light and dark panes side
+  by side and the light one silently went dark; that is why it renders once now.
 - **shadcn's `base-vega` style is built on Base UI, which has no `asChild`** — it uses a `render`
   prop. For a link styled as a button, apply `buttonVariants({ variant, size })` to the `Link`.
 - **Typed routes only bind once a build has written the manifest.** After adding a route, `tsc` may

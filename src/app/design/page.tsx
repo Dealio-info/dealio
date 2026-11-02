@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ThemePair } from "./theme-pair";
+import { Section } from "./theme-pair";
 import { BrandSwatches, SemanticSwatches, StatusSwatches } from "./swatches";
 import { StatusBadge } from "@/components/app/status-badge";
 import { CurrencyAmount } from "@/components/app/currency-amount";
@@ -30,6 +30,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { ThemeToggle } from "@/components/nav/theme-toggle";
 import { capitalize, TERMS } from "@/lib/terms";
 
 export const metadata = {
@@ -67,11 +68,15 @@ export default function DesignPage() {
   return (
     <div className="mx-auto max-w-5xl space-y-12 px-4 py-10">
       <header className="space-y-2">
-        <h1 className="text-3xl font-semibold tracking-tight">Design</h1>
+        <div className="flex items-start justify-between gap-4">
+          <h1 className="text-3xl font-semibold tracking-tight">Design</h1>
+          <ThemeToggle />
+        </div>
         <p className="text-muted-foreground max-w-prose text-sm">
-          Every token and component the interface is built from, light and dark. Neutral
-          on purpose — the palette is pending, and each colour here is a role the theme
-          redefines in one place.
+          Every token and component the interface is built from. Neutral on purpose —
+          the palette is pending, and each colour here is a role the theme redefines in
+          one place. The toggle sets the real theme; the paired panes below always show
+          both at once, so a change can be checked against the other without switching.
         </p>
         {/*
           shadcn's `base-vega` style is built on Base UI, which has no `asChild`
@@ -100,28 +105,28 @@ export default function DesignPage() {
         </nav>
       </header>
 
-      <ThemePair
+      <Section
         title="Semantic tokens"
         description="What components actually reference. The theme redefines these; nothing hardcodes a colour."
       >
         <SemanticSwatches />
-      </ThemePair>
+      </Section>
 
-      <ThemePair
+      <Section
         title="Brand tokens"
         description="Sketched from the brief and not final. Used nowhere yet — deliberately, until the palette is confirmed."
       >
         <BrandSwatches />
-      </ThemePair>
+      </Section>
 
-      <ThemePair
+      <Section
         title="Status roles"
         description="Five roles covering eight lifecycle statuses. Neutral now; giving these hue is the single change that makes a pipeline scannable."
       >
         <StatusSwatches />
-      </ThemePair>
+      </Section>
 
-      <ThemePair
+      <Section
         title="Type scale"
         description="One heading size per level. Pages that invent their own are how an app stops looking like one app."
       >
@@ -136,9 +141,9 @@ export default function DesignPage() {
           <p className="text-muted-foreground text-xs">Caption — timestamps, hints.</p>
           <p className="font-mono text-xs">01a198e6-c0ac-77f8 — identifiers</p>
         </div>
-      </ThemePair>
+      </Section>
 
-      <ThemePair
+      <Section
         title="Lifecycle statuses"
         description="The same status reads differently to each audience: a rep's “Sent” is an advocate's “New”."
       >
@@ -160,9 +165,9 @@ export default function DesignPage() {
             </div>
           </div>
         </div>
-      </ThemePair>
+      </Section>
 
-      <ThemePair
+      <Section
         title="Currency"
         description="The name is a placeholder and lives in one constant, so it is never spelled out in a component."
       >
@@ -171,9 +176,9 @@ export default function DesignPage() {
           <CurrencyAmount amount={48} />
           <CurrencyAmount amount={1250} size="large" />
         </div>
-      </ThemePair>
+      </Section>
 
-      <ThemePair title="Buttons">
+      <Section title="Buttons">
         <div className="space-y-3">
           <div className="flex flex-wrap items-center gap-2">
             <Button>Primary</Button>
@@ -190,18 +195,18 @@ export default function DesignPage() {
             <Button disabled>Disabled</Button>
           </div>
         </div>
-      </ThemePair>
+      </Section>
 
-      <ThemePair title="Badges">
+      <Section title="Badges">
         <div className="flex flex-wrap gap-2">
           <Badge>Default</Badge>
           <Badge variant="secondary">Secondary</Badge>
           <Badge variant="outline">Outline</Badge>
           <Badge variant="destructive">Destructive</Badge>
         </div>
-      </ThemePair>
+      </Section>
 
-      <ThemePair
+      <Section
         title="Form controls"
         description="Native forms with server actions rather than a form library — one less dependency, and they work before hydration."
       >
@@ -229,9 +234,9 @@ export default function DesignPage() {
             </Label>
           </div>
         </div>
-      </ThemePair>
+      </Section>
 
-      <ThemePair
+      <Section
         title="Page header"
         description="One component so every page agrees on where the title, the explanation and the primary action sit."
       >
@@ -240,9 +245,9 @@ export default function DesignPage() {
           description={`Referrals, reference calls and testimonials you have asked ${TERMS.advocate.many} for.`}
           action={<Button size="sm">New {TERMS.quest.one}</Button>}
         />
-      </ThemePair>
+      </Section>
 
-      <ThemePair title="Cards and stats">
+      <Section title="Cards and stats">
         <div className="space-y-4">
           <Card>
             <CardHeader>
@@ -261,9 +266,9 @@ export default function DesignPage() {
             <Stat label="Influenced" value="$48,200" hint="Closed-won, last 90 days" />
           </div>
         </div>
-      </ThemePair>
+      </Section>
 
-      <ThemePair title="Tables">
+      <Section title="Tables">
         <Table>
           <TableHeader>
             <TableRow>
@@ -289,9 +294,9 @@ export default function DesignPage() {
             </TableRow>
           </TableBody>
         </Table>
-      </ThemePair>
+      </Section>
 
-      <ThemePair
+      <Section
         title="Empty states"
         description="The first thing a new customer sees. Every one should name the next action."
       >
@@ -300,9 +305,9 @@ export default function DesignPage() {
           description={`Invite a customer and they will appear here once they accept.`}
           action={<Button size="sm">Invite an {TERMS.advocate.one}</Button>}
         />
-      </ThemePair>
+      </Section>
 
-      <ThemePair title="Alerts">
+      <Section title="Alerts">
         <div className="space-y-3">
           <Alert>
             <AlertTitle>Waiting for approval</AlertTitle>
@@ -318,9 +323,9 @@ export default function DesignPage() {
             </AlertDescription>
           </Alert>
         </div>
-      </ThemePair>
+      </Section>
 
-      <ThemePair
+      <Section
         title="Loading"
         description="Skeletons matched to the shape of what is coming, so the page does not jump."
       >
@@ -333,7 +338,7 @@ export default function DesignPage() {
             <Skeleton className="h-4 w-2/3" />
           </div>
         </div>
-      </ThemePair>
+      </Section>
 
       <section className="text-muted-foreground space-y-2 border-t pt-8 text-sm">
         <p>
