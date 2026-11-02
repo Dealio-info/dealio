@@ -80,7 +80,10 @@ UI in the MVP; platform staff onboards businesses with a seed script.
 - **Never write a literal colour in a component.** No `bg-blue-500`, no `text-[#16c172]`, no hex in
   a style attribute. The MVP is built deliberately theme-neutral and the palette lands at the end,
   from the business lead — which only stays a one-file edit if every colour reference goes through a
-  role token. A single literal is a thing someone has to find later. See `docs/brand-brief.md`.
+  role token. **Enforced by `no-restricted-syntax` in `eslint.config.mjs`**, which matches both
+  palette utilities and arbitrary values inside `className` and `style`, including within `cn()` and
+  template literals. `src/components/ui/**` is exempt, since the shadcn CLI overwrites those. See
+  `docs/brand-brief.md`.
 - **Dark mode is class-based** (`.dark`, via `@custom-variant dark`). Do not add
   `prefers-color-scheme` rules; they compete with it. And keep `body` colors inside
   `@layer base` — an unlayered `body` rule overrides layered ones and breaks shadcn theming.
@@ -130,6 +133,31 @@ and outcome handlers use deterministic event IDs so retries are safe.
 
 Next.js 16 + React 19 + TypeScript + Tailwind 4, shadcn/ui on Base UI, Vitest 5, ESLint 9 (flat
 config) with the database boundary, and Prisma 7 with the full domain schema migrated.
+
+**Design pass (between Tasks 8 and 9).** The app shell, the shared components and the rules that
+keep the theme swappable.
+
+- **`/design` is the living style guide.** Every token and component, rendered light and dark side
+  by side. Review the design by using that page, not by reading about it — and when adding a
+  component, add it there too, or it stops being the answer to "what does this look like".
+- **Two shells, not one.** `src/app/app/layout.tsx` and `src/app/advocate/layout.tsx` have visibly
+  different chrome because they serve different people. Both call `requireIdentity`; the proxy is a
+  redirect, not the boundary.
+- **Shared product components** live in `src/components/app/`: `StatusBadge`, `CurrencyAmount`,
+  `PageHeader`, `EmptyState`, `Stat`. Compose these rather than restyling a heading per page.
+- **Status colour is five roles, not eight hues** — `status-waiting|active|done|success|failed`,
+  defined under `:root` and `.dark` so they stay legible in both. The first version put them in
+  `@theme`, where a fixed value cannot work on both a white and a near-black background, and
+  "Rewarded" was invisible in dark mode. Anything that must read across themes belongs with the
+  theme-responsive variables, never with the brand constants.
+- **Dark mode is previewed, not shipped.** `.dark` is applied to a container on `/design` and
+  nowhere else; there is no user-facing toggle and no `next-themes`. The tokens stay exercised
+  without doubling the review surface for an MVP whose palette is undecided.
+- **shadcn's `base-vega` style is built on Base UI, which has no `asChild`** — it uses a `render`
+  prop. For a link styled as a button, apply `buttonVariants({ variant, size })` to the `Link`.
+- **Typed routes only bind once a build has written the manifest.** After adding a route, `tsc` may
+  report a stale link error until `next build` runs; on a fresh checkout it is permissive, and the
+  build in CI is what actually catches a bad `href`.
 
 **Through Task 8.** The `rewards` module: `creditForOpportunity`, `getBalance`,
 `listLedgerEntries`, `getOutstandingLiability`. `VERIFIED → REWARDED` now credits the advocate in
