@@ -138,11 +138,21 @@ what gives them one. **Claiming requires the token and nothing else** — no ema
 `scripts/seed-business.ts`. The one part not covered by tests is `provisionAuthUser`, which calls
 Supabase's admin API; it has not been run against a live project yet.
 
-**Through Task 4, pending credentials.** Schema, tenant context, authority helpers, the
-database-import boundary, and Supabase auth wiring are all in place: `src/server/auth.ts` bridges a
-session to a domain `Identity`, `src/proxy.ts` refreshes the session and gates `/app` and
-`/advocate`, `/auth/callback` exchanges the code, and `/sign-in` offers magic link, password and
-Google. The flow has **not been exercised end to end** — that needs real Supabase credentials.
+**Through Task 4, and now exercised against a live project.** Schema, tenant context, authority
+helpers, the database-import boundary, and Supabase auth wiring are all in place:
+`src/server/auth.ts` bridges a session to a domain `Identity`, `src/proxy.ts` refreshes the session
+and gates `/app` and `/advocate`, `/auth/callback` exchanges the code, and `/sign-in` offers magic
+link, password and Google.
+
+Confirmed by hand against the real Supabase project, end to end: the onboarding scripts provision
+an auth user, a link they mint signs that person in, and `/app` renders the `BUSINESS_ADMIN`
+membership the seed script created. So `resolveIdentity` is verified against live data and not only
+against the test Postgres.
+
+`/app` and `/advocate` are deliberately placeholders that render the resolved `Identity` and nothing
+else. That makes them the cheapest check that the whole chain holds, and the first thing to open
+when auth misbehaves: "No business yet" on `/app` means the session resolved but the membership did
+not.
 
 Two things to know about auth:
 
