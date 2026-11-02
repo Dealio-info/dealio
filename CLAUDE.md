@@ -144,10 +144,15 @@ helpers, the database-import boundary, and Supabase auth wiring are all in place
 and gates `/app` and `/advocate`, `/auth/callback` exchanges the code, and `/sign-in` offers magic
 link, password and Google.
 
-Confirmed by hand against the real Supabase project: the onboarding scripts provision an auth user,
-and signing in from one of their links works. `/app` and `/advocate` are deliberately placeholders
-that render the resolved `Identity` — which makes them the cheapest check that the whole chain
-holds, and the thing to open first when auth misbehaves.
+Confirmed by hand against the real Supabase project, end to end: the onboarding scripts provision
+an auth user, a link they mint signs that person in, and `/app` renders the `BUSINESS_ADMIN`
+membership the seed script created. So `resolveIdentity` is verified against live data and not only
+against the test Postgres.
+
+`/app` and `/advocate` are deliberately placeholders that render the resolved `Identity` and nothing
+else. That makes them the cheapest check that the whole chain holds, and the first thing to open
+when auth misbehaves: "No business yet" on `/app` means the session resolved but the membership did
+not.
 
 Two things to know about auth:
 
