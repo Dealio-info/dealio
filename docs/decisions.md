@@ -303,6 +303,35 @@ is the problem.
 
 ## Log
 
+**2026-11-02 — The design pass: a shell, a style guide, and a lint rule.**
+Built between Tasks 8 and 9 so the UI tasks are composition rather than invention.
+
+`/design` renders every token and component light and dark, side by side, so the design can be
+reviewed by using it. That immediately earned itself: the first version of the status tokens lived
+in `@theme`, with fixed values, and "Rewarded" was invisible in dark mode. A fixed colour cannot be
+legible on both a white and a near-black background — anything that must read across themes belongs
+under `:root` and `.dark` with the other theme-responsive variables. No amount of reading the code
+would have shown that.
+
+Dark mode is previewed rather than shipped: `.dark` is applied to a container on the style guide and
+nowhere else, with no toggle and no `next-themes`. That keeps the tokens exercised instead of
+rotting as dead config, without doubling the review surface for an MVP whose palette is undecided.
+`sonner` was kept for toasts and its generated wrapper patched to drop the `next-themes` dependency.
+
+The theme-neutral promise is now a lint rule rather than a convention: `no-restricted-syntax`
+rejects literal colours in `className` and `style`, including inside `cn()` and template literals,
+with `src/components/ui/**` exempt because the CLI overwrites it. Verified against a probe
+containing four violations and three legitimate lines.
+
+Two findings worth keeping. shadcn's `base-vega` style is on Base UI, which has no `asChild` — use
+`buttonVariants` for a link that looks like a button. And Next 16's typed routes only bind once a
+build has written the manifest, so a stale one gives false errors locally while a fresh checkout is
+permissive; the build step in CI is what actually catches a bad `href`.
+
+The nav links only to pages that exist, because typed routes refused otherwise — which is how the
+information architecture got stubbed: `/app/{advocates,quests,rewards,settings}` and
+`/advocate/rewards` are real pages saying what is and is not built behind them.
+
 **2026-11-02 — Task 8: the ledger, and currency that cannot move without it.**
 `VERIFIED → REWARDED` now credits the advocate in the same transaction as the status change, so a
 reward cannot read as paid without the row that pays it. Crediting is a consequence of that status

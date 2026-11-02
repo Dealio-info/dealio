@@ -51,3 +51,45 @@ export function countOf(amount: number, term: Term): string {
 export function capitalize(text: string): string {
   return text.length === 0 ? text : text[0]!.toUpperCase() + text.slice(1);
 }
+
+/**
+ * What each lifecycle status is called, and which colour role it carries.
+ *
+ * The domain names are blunt enum values; these are what a person reads, so
+ * they live here with the other copy. The `role` is deliberately not a colour —
+ * it maps to a `status-*` token in `globals.css`, which is what the palette
+ * gives hue to later.
+ *
+ * Two audiences see the same status differently: a rep sees "Awaiting approval"
+ * where an advocate would see nothing at all, since it has not been sent yet.
+ * Where the wording differs, `advocate` overrides `label`.
+ */
+export type StatusRole = "waiting" | "active" | "done" | "success" | "failed";
+
+export const OPPORTUNITY_STATUS: Record<
+  string,
+  { readonly label: string; readonly advocate?: string; readonly role: StatusRole }
+> = {
+  PENDING_APPROVAL: { label: "Awaiting approval", role: "waiting" },
+  REQUESTED: { label: "Sent", advocate: "New", role: "waiting" },
+  ACCEPTED: { label: "Accepted", role: "active" },
+  COMPLETED: { label: "Marked done", advocate: "Awaiting review", role: "active" },
+  VERIFIED: { label: "Verified", role: "done" },
+  REWARDED: { label: "Rewarded", advocate: "Paid", role: "success" },
+  DECLINED: { label: "Declined", role: "failed" },
+  CANCELLED: { label: "Cancelled", role: "failed" },
+};
+
+/** The label for a status, from the point of view of whoever is looking. */
+export function statusLabel(
+  status: string,
+  audience: "business" | "advocate" = "business",
+): string {
+  const entry = OPPORTUNITY_STATUS[status];
+  if (!entry) return status;
+  return audience === "advocate" ? (entry.advocate ?? entry.label) : entry.label;
+}
+
+export function statusRole(status: string): StatusRole {
+  return OPPORTUNITY_STATUS[status]?.role ?? "waiting";
+}

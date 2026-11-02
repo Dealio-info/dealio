@@ -49,6 +49,49 @@ const prismaBoundary = {
   ],
 };
 
+/**
+ * Literal colours are banned in markup, and that is architecture too.
+ *
+ * The MVP is built deliberately theme-neutral: the palette arrives from the
+ * business lead at the end and gets swapped once, before shipping. That is only
+ * a one-file edit if every colour reference in the app goes through a role token
+ * — `bg-background`, `text-foreground`, `bg-primary`, `text-destructive` — which
+ * the theme redefines. A single `bg-blue-500` or `text-[#16c172]` is a colour
+ * the swap silently misses, and finding them later means reading every
+ * component.
+ *
+ * Scoped to `className` and `style` so ordinary strings are unaffected. See
+ * docs/brand-brief.md for what is actually pending.
+ */
+const COLOUR_MESSAGE =
+  "Use a semantic token (bg-background, text-foreground, bg-primary, text-destructive) or a brand- token, not a literal colour. The palette is swapped in one file at the end; a literal is a colour that swap will miss. See docs/brand-brief.md.";
+
+const TAILWIND_PALETTE =
+  "slate|gray|grey|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose";
+
+const colourLiterals = [
+  {
+    // `bg-blue-500`, `hover:text-red-600`, `dark:border-zinc-800`. Plain
+    // strings: a Literal node exposes `value`, so match on that.
+    selector: `JSXAttribute[name.name=/^(className|style)$/] Literal[value=/(?:^|[\\s:'"\`])(?:bg|text|border|ring|outline|fill|stroke|from|via|to|divide|placeholder|caret|accent|decoration|shadow)-(?:${TAILWIND_PALETTE})-[0-9]{2,3}/]`,
+    message: COLOUR_MESSAGE,
+  },
+  {
+    // The same inside a template literal, where the text lives on `value.raw`.
+    selector: `JSXAttribute[name.name=/^(className|style)$/] TemplateElement[value.raw=/(?:^|[\\s:'"\`])(?:bg|text|border|ring|outline|fill|stroke|from|via|to|divide|placeholder|caret|accent|decoration|shadow)-(?:${TAILWIND_PALETTE})-[0-9]{2,3}/]`,
+    message: COLOUR_MESSAGE,
+  },
+  {
+    // Arbitrary values: `bg-[#16c172]`, `text-[rgb(0,0,0)]`.
+    selector: `JSXAttribute[name.name=/^(className|style)$/] Literal[value=/-\\[(?:#[0-9a-fA-F]{3,8}|(?:rgb|rgba|hsl|hsla|oklch|lab|color)\\()/]`,
+    message: COLOUR_MESSAGE,
+  },
+  {
+    selector: `JSXAttribute[name.name=/^(className|style)$/] TemplateElement[value.raw=/-\\[(?:#[0-9a-fA-F]{3,8}|(?:rgb|rgba|hsl|hsla|oklch|lab|color)\\()/]`,
+    message: COLOUR_MESSAGE,
+  },
+];
+
 export default tseslint.config(
   {
     ignores: [
@@ -78,6 +121,19 @@ export default tseslint.config(
         "error",
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
       ],
+    },
+  },
+  {
+    // Markup, where the theme has to stay swappable.
+    files: ["src/app/**/*.tsx", "src/components/**/*.tsx"],
+    ignores: [
+      // shadcn generates these and the CLI overwrites them on update; they use
+      // semantic tokens already, and hand-editing them to satisfy our rule
+      // would be undone by the next `shadcn add`.
+      "src/components/ui/**",
+    ],
+    rules: {
+      "no-restricted-syntax": ["error", ...colourLiterals],
     },
   },
   {

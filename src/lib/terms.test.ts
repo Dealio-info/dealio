@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { capitalize, countOf, TERMS } from "./terms";
+import {
+  capitalize,
+  countOf,
+  OPPORTUNITY_STATUS,
+  statusLabel,
+  statusRole,
+  TERMS,
+} from "./terms";
 
 /**
  * The point of these tests is not the strings — it is that renaming a
@@ -44,5 +51,45 @@ describe("TERMS", () => {
       expect(term.one, key).toBe(term.one.toLowerCase());
       expect(term.many, key).toBe(term.many.toLowerCase());
     }
+  });
+});
+
+describe("statusLabel", () => {
+  it("gives each status a human label", () => {
+    expect(statusLabel("PENDING_APPROVAL")).toBe("Awaiting approval");
+    expect(statusLabel("REWARDED")).toBe("Rewarded");
+  });
+
+  it("reads differently for an advocate where that matters", () => {
+    // A rep sent it; to the advocate it is simply new.
+    expect(statusLabel("REQUESTED", "business")).toBe("Sent");
+    expect(statusLabel("REQUESTED", "advocate")).toBe("New");
+    // The advocate said it was done; the business has not looked yet.
+    expect(statusLabel("COMPLETED", "advocate")).toBe("Awaiting review");
+  });
+
+  it("falls back to the business label when there is no advocate variant", () => {
+    expect(statusLabel("ACCEPTED", "advocate")).toBe("Accepted");
+  });
+
+  it("covers every status in the schema", () => {
+    for (const s of [
+      "PENDING_APPROVAL",
+      "REQUESTED",
+      "ACCEPTED",
+      "COMPLETED",
+      "VERIFIED",
+      "REWARDED",
+      "DECLINED",
+      "CANCELLED",
+    ]) {
+      expect(OPPORTUNITY_STATUS[s], s).toBeDefined();
+      expect(statusLabel(s), s).not.toBe(s);
+    }
+  });
+
+  it("passes an unknown status through rather than throwing", () => {
+    expect(statusLabel("WAT")).toBe("WAT");
+    expect(statusRole("WAT")).toBe("waiting");
   });
 });
