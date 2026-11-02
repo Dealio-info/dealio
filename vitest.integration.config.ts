@@ -27,6 +27,14 @@ export default defineConfig({
     testTimeout: 30_000,
   },
   resolve: {
-    alias: { "@": path.resolve(import.meta.dirname, "./src") },
+    alias: {
+      "@": path.resolve(import.meta.dirname, "./src"),
+      // See src/test/server-only-stub.ts: the real `server-only` throws unless
+      // resolved under the `react-server` condition, which nothing sets here.
+      "server-only": path.resolve(
+        import.meta.dirname,
+        "./src/test/server-only-stub.ts",
+      ),
+    },
   },
 });

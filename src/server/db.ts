@@ -58,3 +58,24 @@ if (process.env.NODE_ENV !== "production") {
  *     singleton reads from `DATABASE_URL`.
  */
 export type Db = PrismaClient | Prisma.TransactionClient;
+
+/**
+ * Run `fn` inside a transaction, joining the caller's if there already is one.
+ *
+ * Invariant 1 says a currency movement and the ledger row recording it have to
+ * be atomic. Composing two services to achieve that runs into the fact that a
+ * `Db` may be either a client, which can open a transaction, or a transaction
+ * client, which cannot — and Postgres has no nested transactions, so calling
+ * `$transaction` on an already-open one is not an option either.
+ *
+ * So the handle is asked what it is. If it can begin a transaction, it does; if
+ * it is already one, `fn` runs in it. Either way `fn` is atomic, which is the
+ * only thing the caller needs to be true.
+ *
+ * The alternative was requiring every caller to remember to wrap — a rule
+ * whose only enforcement is reviewer attention, on the code path that moves
+ * money.
+ */
+export function inTransaction<T>(db: Db, fn: (tx: Db) => Promise<T>): Promise<T> {
+  return "$transaction" in db ? db.$transaction((tx) => fn(tx)) : fn(db);
+}

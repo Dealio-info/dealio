@@ -8,6 +8,8 @@ import {
   requireTenantContext,
   type ServiceContext,
 } from "@/server/context";
+import { inTransaction } from "@/server/db";
+import { creditForOpportunity } from "@/server/services/rewards/credit-for-opportunity";
 import { canTransition, isLegalTransition } from "./transitions";
 
 export type TransitionOpportunityInput = {
@@ -35,17 +37,18 @@ const STAMPS: Partial<Record<OpportunityStatus, string>> = {
 /**
  * The only way an opportunity's status changes. Invariant 3.
  *
- * ⚠️ **`VERIFIED → REWARDED` does not yet move any currency.** Crediting the
- * advocate's ledger inside this same transaction is Task 8. Until that lands,
- * an opportunity can read `REWARDED` while the advocate's balance is zero, so
- * do not build anything that treats the status as evidence of payment. The
- * balance is `SUM(LedgerEntry.delta)` and nothing else ever will be.
- *
  * Three things happen atomically: the status moves, its timestamp is stamped,
  * and an `OpportunityEvent` records who did it. They are one nested write
  * rather than three statements, and the `where` clause carries the expected
  * current status — so a second concurrent attempt finds nothing to update
  * instead of overwriting the first.
+ *
+ * On `VERIFIED → REWARDED` a fourth thing happens in the same transaction: the
+ * advocate is credited. That is invariant 1 — the status saying an advocate was
+ * rewarded and the ledger row that pays them cannot be separated, because a
+ * crash between the two would otherwise leave a reward that reads as paid and
+ * is not. `inTransaction` makes the pair atomic whether or not the caller
+ * already opened a transaction.
  */
 export async function transitionOpportunity(
   ctx: ServiceContext,
@@ -110,39 +113,51 @@ export async function transitionOpportunity(
 
   const stamp = STAMPS[input.to];
 
-  try {
-    await ctx.db.opportunity.update({
-      // `status: from` is the compare-and-swap. Prisma throws P2025 when it
-      // matches nothing, which is what a second simultaneous attempt gets.
-      where: { id: opportunity.id, status: from },
-      data: {
-        status: input.to,
-        ...(stamp && { [stamp]: new Date() }),
-        ...(input.to === "VERIFIED" &&
-          input.influencedRevenueCents != null && {
-            influencedRevenueCents: input.influencedRevenueCents,
-          }),
-        events: {
-          create: {
-            fromStatus: from,
-            toStatus: input.to,
-            actorUserId: actor.userId,
-            note: input.note ?? null,
+  // One transaction covers the status change and, where there is one, the
+  // credit. For every other transition this is a single statement and the
+  // wrapper costs nothing.
+  await inTransaction(ctx.db, async (tx) => {
+    try {
+      await tx.opportunity.update({
+        // `status: from` is the compare-and-swap. Prisma throws P2025 when it
+        // matches nothing, which is what a second simultaneous attempt gets.
+        where: { id: opportunity.id, status: from },
+        data: {
+          status: input.to,
+          ...(stamp && { [stamp]: new Date() }),
+          ...(input.to === "VERIFIED" &&
+            input.influencedRevenueCents != null && {
+              influencedRevenueCents: input.influencedRevenueCents,
+            }),
+          events: {
+            create: {
+              fromStatus: from,
+              toStatus: input.to,
+              actorUserId: actor.userId,
+              note: input.note ?? null,
+            },
           },
         },
-      },
-    });
-  } catch (error) {
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === "P2025"
-    ) {
-      throw new ConflictError(
-        "That opportunity changed while you were acting on it; reload and try again",
-      );
+      });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2025"
+      ) {
+        throw new ConflictError(
+          "That opportunity changed while you were acting on it; reload and try again",
+        );
+      }
+      throw error;
     }
-    throw error;
-  }
+
+    if (input.to === "REWARDED") {
+      // After the status change, not before: `creditForOpportunity` refuses an
+      // opportunity that is not yet REWARDED, so crediting can never be a way
+      // of reaching that status — only a consequence of it.
+      await creditForOpportunity({ db: tx, actor }, { opportunityId: opportunity.id });
+    }
+  });
 
   return { id: opportunity.id, from, to: input.to };
 }

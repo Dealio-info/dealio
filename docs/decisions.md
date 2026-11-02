@@ -303,6 +303,37 @@ is the problem.
 
 ## Log
 
+**2026-11-02 — Task 8: the ledger, and currency that cannot move without it.**
+`VERIFIED → REWARDED` now credits the advocate in the same transaction as the status change, so a
+reward cannot read as paid without the row that pays it. Crediting is a consequence of that status
+and never a route to it — `creditForOpportunity` refuses an opportunity in any other state, which
+keeps the state machine the only way currency starts moving.
+
+Idempotency is the database's job, not the service's: the unique index on `(opportunityId, reason)`
+means a retry, a double-click or a second server gets P2002, and the service treats that as the
+normal "already credited" path. A test inserts the duplicate directly, bypassing every service, to
+confirm the guarantee does not depend on the check above it.
+
+`inTransaction` was added to `src/server/db.ts` so services can compose atomically whether or not
+the caller already opened a transaction. Writing its test taught the lesson worth keeping: the
+first version passed a transaction client in, which exercises only the join, and stayed green when
+the helper was mutated never to open one. Both branches now have their own test.
+
+Three of the first tests were wrong in an instructive way — they used `deleteMany` and `updateMany`
+on `ledger_entries` to arrange state, which the append-only trigger refuses. The tests were trying
+to do the exact thing the invariant forbids. Arranging a rewarded-but-uncredited opportunity now
+goes through raw SQL on `opportunities`, which is honest about being a state no service can produce.
+
+Also added `getOutstandingLiability`: the sum of a business's ledger. The product brief asks for it
+and the prototype could not compute it at all, because a mutable balance column has no history to
+sum.
+
+**2026-11-02 — The MVP is built theme-neutral; the palette lands last.**
+Confirmed with the user. The interface is built against shadcn's role tokens and the theme is
+swapped once, before shipping, when the business lead supplies a palette. That only works if no
+component ever contains a literal colour, so that is now a convention in CLAUDE.md, and the
+intention is to make it lint-enforced during the design pass rather than leave it to attention.
+
 **2026-11-02 — A design pass goes before the UI tasks, and brand waits for the business lead.**
 Asked whether the UI tasks carried any design analysis; they did not. The plan specifies them purely
 in terms of data and permissions, and the actual state turned out to be thinner than that implies:
