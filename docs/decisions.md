@@ -304,6 +304,30 @@ is the problem.
 
 ## Log
 
+**2026-11-12 — Task 9: the advocate side.**
+`/advocate` shows what each business has asked of a person, their balance, and the three responses
+their status allows. Composition over the existing services — `getAdvocateDashboard` gathers
+`listOpportunities` and `getBalance`, both of which already scope an advocate to their own rows.
+
+The server action is where the new security surface is. `businessId` arrives from the form, which
+is safe only because `advocateActor` checks it against the identity resolved from the session;
+naming the business explicitly is the documented way to pick a context, since one person can
+advocate for several companies. Tested as a composition rather than layer by layer: a claimed
+invite through to completed work, a tampered `businessId` for another business, and a signed-up
+user who never claimed getting no context at all. The action also exposes `accept | decline |
+complete` rather than a target status, so the browser cannot name `REWARDED` — the state machine
+would refuse it, but a narrower surface has nothing to refuse.
+
+One dashboard per business, never merged: a balance earned at one company cannot be spent at
+another.
+
+Two UI findings. `CardContent` is `flex flex-col`, and `flex-wrap` does not override it — different
+properties, so tailwind-merge keeps both and the buttons stacked full width. And finding that
+exposed something worse: the style guide's quest card was a hand-written copy that had already
+drifted from the real one. Both now render `src/components/app/quest-card.tsx`. A guide showing
+markup the app does not use is worse than no guide, so components go in it by reference, never by
+copy.
+
 **2026-11-02 — Dark mode ships after all, and a nav bug found by using it.**
 Reviewing the shell turned up a real defect: the Dashboard tab stayed highlighted on every page,
 alongside whichever tab was actually current. A `startsWith` check is wrong as soon as one href

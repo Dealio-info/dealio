@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Section } from "./theme-pair";
 import { BrandSwatches, SemanticSwatches, StatusSwatches } from "./swatches";
 import { StatusBadge } from "@/components/app/status-badge";
+import { QuestCard } from "@/components/app/quest-card";
 import { CurrencyAmount } from "@/components/app/currency-amount";
 import { PageHeader } from "@/components/app/page-header";
 import { EmptyState } from "@/components/app/empty-state";
@@ -265,6 +266,34 @@ export default function DesignPage() {
             <Stat label="Awarded" value={<CurrencyAmount amount={310} />} />
             <Stat label="Influenced" value="$48,200" hint="Closed-won, last 90 days" />
           </div>
+        </div>
+      </Section>
+
+      <Section
+        title="A quest, as the advocate sees it"
+        description="The real component, with plain buttons standing in for the form. Needs-you items lead; everything else is quieter."
+      >
+        <div className="space-y-3">
+          <QuestCard
+            title="Reference call for Acme"
+            subtitle="Jordan Reyes · Northwind"
+            status="REQUESTED"
+            rewardAmount={5}
+            actions={
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm">Accept</Button>
+                <Button size="sm" variant="outline">
+                  Decline
+                </Button>
+              </div>
+            }
+          />
+          <QuestCard
+            title="Testimonial for the website"
+            status="REWARDED"
+            rewardAmount={8}
+            quiet
+          />
         </div>
       </Section>
 

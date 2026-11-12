@@ -3,6 +3,7 @@ import {
   ConflictError,
   ForbiddenError,
   NotFoundError,
+  advocateActor,
   type ServiceContext,
 } from "@/server/context";
 import {
@@ -16,6 +17,11 @@ import { inviteAdvocate } from "./invite-advocate";
 import { claimInvite } from "./claim-invite";
 import { listAdvocates } from "./list-advocates";
 import { hashInviteToken } from "./invite-token";
+import { getAdvocateDashboard } from "./advocate-dashboard";
+import { createOpportunity } from "@/server/services/opportunities/create-opportunity";
+import { transitionOpportunity } from "@/server/services/opportunities/transition-opportunity";
+import { listOpportunities } from "@/server/services/opportunities/list-opportunities";
+import { resolveIdentity } from "@/server/services/identity/resolve-identity";
 
 const prisma = testPrisma();
 
@@ -488,5 +494,143 @@ describe("listAdvocates", () => {
     await expect(
       listAdvocates(advocateOf(business.id, user.id, invite.advocateId)),
     ).rejects.toThrow(ForbiddenError);
+  });
+});
+
+describe("getAdvocateDashboard", () => {
+  it("returns the business, the balance and only this advocate's work", async () => {
+    const business = await makeBusiness({
+      name: "Acme Corp",
+      requireAdminApprovalForOpportunities: false,
+      requireAdminApprovalForRewards: false,
+    });
+    // A real user row: `createOpportunity` records who created it.
+    const repUser = await makeUser();
+    const staff = repOf(business.id, repUser.id);
+    const invite = await inviteAdvocate(staff, { email: "mine@customer.com" });
+    const user = await makeUser();
+    await claimInvite(prisma, { token: invite.token, userId: user.id });
+
+    // A second advocate with their own opportunity, which must not appear.
+    const otherInvite = await inviteAdvocate(staff, { email: "other@customer.com" });
+    const otherUser = await makeUser();
+    await claimInvite(prisma, { token: otherInvite.token, userId: otherUser.id });
+
+    const mine = await createOpportunity(staff, {
+      advocateId: invite.advocateId,
+      type: "REFERENCE_CALL",
+      title: "Mine",
+      rewardAmount: 5,
+    });
+    await createOpportunity(staff, {
+      advocateId: otherInvite.advocateId,
+      type: "TESTIMONIAL",
+      title: "Theirs",
+      rewardAmount: 9,
+    });
+    for (const to of [
+      "REQUESTED",
+      "ACCEPTED",
+      "COMPLETED",
+      "VERIFIED",
+      "REWARDED",
+    ] as const) {
+      const who =
+        to === "ACCEPTED" || to === "COMPLETED"
+          ? advocateOf(business.id, user.id, invite.advocateId)
+          : staff;
+      await transitionOpportunity(who, { opportunityId: mine.id, to });
+    }
+
+    const dash = await getAdvocateDashboard(
+      advocateOf(business.id, user.id, invite.advocateId),
+    );
+
+    expect(dash.businessName).toBe("Acme Corp");
+    expect(dash.balance).toBe(5);
+    expect(dash.opportunities.map((o) => o.title)).toEqual(["Mine"]);
+  });
+
+  it("refuses a business actor — this is the advocate's own view", async () => {
+    const business = await makeBusiness();
+    await expect(getAdvocateDashboard(repOf(business.id))).rejects.toThrow(
+      ForbiddenError,
+    );
+  });
+});
+
+describe("the path an advocate's server action takes", () => {
+  /**
+   * The action resolves a session to an `Identity`, then names a business with
+   * `advocateActor` and hands the result to the same state machine the
+   * business side uses. `businessId` arrives from the form, which is only safe
+   * because it is checked against the identity rather than trusted — so that
+   * is what these cover, end to end from a claimed invite.
+   */
+  async function claimedAdvocate(businessName: string) {
+    const business = await makeBusiness({
+      name: businessName,
+      requireAdminApprovalForOpportunities: false,
+      requireAdminApprovalForRewards: false,
+    });
+    const repUser = await makeUser();
+    const staff = repOf(business.id, repUser.id);
+    const invite = await inviteAdvocate(staff, {
+      email: `advocate-${businessName}@customer.com`,
+    });
+    const user = await makeUser();
+    await claimInvite(prisma, { token: invite.token, userId: user.id });
+    return { business, staff, user, advocateId: invite.advocateId };
+  }
+
+  it("carries an advocate from invite to completed work", async () => {
+    const { business, staff, user, advocateId } = await claimedAdvocate("Acme");
+    const opp = await createOpportunity(staff, {
+      advocateId,
+      type: "REFERENCE_CALL",
+      title: "Call with a prospect",
+      rewardAmount: 5,
+    });
+    await transitionOpportunity(staff, { opportunityId: opp.id, to: "REQUESTED" });
+
+    const identity = await resolveIdentity(prisma, user.supabaseUserId);
+    const actor = advocateActor(identity, business.id);
+
+    await transitionOpportunity(
+      { db: prisma, actor },
+      { opportunityId: opp.id, to: "ACCEPTED" },
+    );
+    await transitionOpportunity(
+      { db: prisma, actor },
+      { opportunityId: opp.id, to: "COMPLETED" },
+    );
+
+    // What the rep then sees.
+    const seen = await listOpportunities(staff);
+    expect(seen[0]).toMatchObject({ id: opp.id, status: "COMPLETED" });
+  });
+
+  it("refuses a businessId the signed-in person is not an advocate of", async () => {
+    const mine = await claimedAdvocate("Mine");
+    const theirs = await claimedAdvocate("Theirs");
+    const identity = await resolveIdentity(prisma, mine.user.supabaseUserId);
+
+    // Exactly what a tampered form field would do.
+    expect(() => advocateActor(identity, theirs.business.id)).toThrow(ForbiddenError);
+  });
+
+  it("gives an unclaimed invite no context at all", async () => {
+    const business = await makeBusiness();
+    const repUser = await makeUser();
+    await inviteAdvocate(repOf(business.id, repUser.id), {
+      email: "pending@customer.com",
+    });
+    // Someone who signed up but never claimed.
+    const stranger = await makeUser({ email: "pending@customer.com" });
+
+    const identity = await resolveIdentity(prisma, stranger.supabaseUserId);
+
+    expect(identity.advocates).toEqual([]);
+    expect(() => advocateActor(identity, business.id)).toThrow(ForbiddenError);
   });
 });

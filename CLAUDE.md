@@ -134,6 +134,24 @@ and outcome handlers use deterministic event IDs so retries are safe.
 Next.js 16 + React 19 + TypeScript + Tailwind 4, shadcn/ui on Base UI, Vitest 5, ESLint 9 (flat
 config) with the database boundary, and Prisma 7 with the full domain schema migrated.
 
+**Through Task 9.** The advocate side is real: `/advocate` lists what each business has asked of
+them, their balance, and Accept / Decline / Mark done. Three things worth keeping in mind when
+building the business side the same way.
+
+- **Server actions validate with Zod and derive the actor from the session.** `businessId` comes
+  from the form, which is safe only because `advocateActor` checks it against the resolved
+  `Identity` and throws otherwise. Naming the business explicitly is the documented way to pick a
+  context — one person can advocate for several companies, and guessing is the cross-tenant bug.
+- **The action exposes a closed set of responses**, not a target status. `accept | decline |
+complete` map to statuses server-side, so the browser cannot ask for `REWARDED` at all. The state
+  machine would refuse it; the narrower surface means there is nothing to refuse.
+- **One dashboard per business, never merged.** A balance earned at one company cannot be spent at
+  another, so a combined total would be a number that means nothing.
+
+Errors come back through `useActionState` and render inline. "Someone already cancelled this" is
+information, not a crash, and `ServiceError` is the dividing line: those are shown, anything else
+throws.
+
 **Design pass (between Tasks 8 and 9).** The app shell, the shared components and the rules that
 keep the theme swappable.
 
@@ -165,6 +183,13 @@ keep the theme swappable.
 - **A nested element cannot escape an ancestor `.dark`.** The variant is `&:is(.dark *)`, so there
   is no "light island" inside a dark page. The style guide used to render light and dark panes side
   by side and the light one silently went dark; that is why it renders once now.
+- **`CardContent` is `flex flex-col`,** and `flex-wrap` does not override it — different CSS
+  properties, so tailwind-merge keeps both and buttons stretch full width in a column. Put a row of
+  controls in a nested `div`, as `QuestCard` does.
+- **A component the style guide shows must be the component the app renders.** The guide's quest
+  card was a hand-written copy and had already drifted from the real one; both now use
+  `src/components/app/quest-card.tsx`, which takes its actions as a prop. Copying markup into the
+  guide defeats the point of having it.
 - **shadcn's `base-vega` style is built on Base UI, which has no `asChild`** — it uses a `render`
   prop. For a link styled as a button, apply `buttonVariants({ variant, size })` to the `Link`.
 - **Typed routes only bind once a build has written the manifest.** After adding a route, `tsc` may
