@@ -190,16 +190,29 @@ keep the theme swappable.
   `@theme`, where a fixed value cannot work on both a white and a near-black background, and
   "Rewarded" was invisible in dark mode. Anything that must read across themes belongs with the
   theme-responsive variables, never with the brand constants.
-- **Dark mode ships, with a Light/Dark/System toggle** via `next-themes`, `attribute="class"`. Two
-  details that are easy to get wrong: `<html>` carries `suppressHydrationWarning` because the
-  blocking script sets `.dark` before React hydrates — that mismatch is the point, since without it
-  the page flashes the wrong theme — and the toggle's own icon is swapped by CSS (`dark:hidden` /
-  `hidden dark:block`) rather than chosen in JavaScript, because the server cannot know which theme
-  the browser will resolve. The usual `mounted` flag fixes that by rendering the wrong icon first,
-  and `react-hooks` rejects it anyway.
+- **Dark mode ships, with a Light/Dark/System toggle**, implemented in
+  `src/components/nav/theme-provider.tsx` rather than with `next-themes`. That package renders its
+  no-flash script as a `<script>` element inside a client component, which React 19 warns about on
+  every client render — a known, unfixed upstream issue in a package with no release in over a
+  year. Ours puts the script in the SSR stream with `useServerInsertedHTML`, which is the App
+  Router's own mechanism, and reads the stored choice with `useSyncExternalStore` so there is a
+  real server snapshot instead of a hydration guess.
+  - `<html>` still carries `suppressHydrationWarning`: the blocking script sets `.dark` before
+    React hydrates, and that mismatch is the point.
+  - The toggle's icon is swapped by CSS (`dark:hidden` / `hidden dark:block`), not chosen in
+    JavaScript — the server cannot know what the browser will resolve, the usual `mounted` flag
+    renders the wrong icon first, and `react-hooks` rejects it anyway.
+  - When the OS flips while "system" is selected the stored value does not change, so no render
+    happens and the subscription has to apply the class itself. Same for a `storage` event from
+    another tab.
 - **A nested element cannot escape an ancestor `.dark`.** The variant is `&:is(.dark *)`, so there
   is no "light island" inside a dark page. The style guide used to render light and dark panes side
   by side and the light one silently went dark; that is why it renders once now.
+- **A client component still renders on the server.** `"use client"` means "ships to the browser
+  too", not "browser only", so nothing may touch `window` during render. The sign-in page built its
+  Supabase callback URL from `window.location.origin` at the top of the component body and crashed
+  on every visit — unnoticed, because the invite links in testing go straight to `/auth/callback`.
+  Read `window` inside handlers and effects.
 - **`CardContent` is `flex flex-col`,** and `flex-wrap` does not override it — different CSS
   properties, so tailwind-merge keeps both and buttons stretch full width in a column. Put a row of
   controls in a nested `div`, as `QuestCard` does.
