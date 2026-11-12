@@ -304,6 +304,36 @@ is the problem.
 
 ## Log
 
+**2026-11-12 — Two bugs on the sign-in page, and next-themes replaced.**
+Reported from the browser console, which is the only place either would have shown up.
+
+**The sign-in page crashed on every visit.** It built the Supabase callback URL from
+`window.location.origin` at the top of a client component body, and a client component still
+renders on the server — `"use client"` means "ships to the browser too", not "browser only". It had
+been broken since Task 4 and nobody noticed, because the invite links used in testing go straight
+to `/auth/callback` and never touch `/sign-in`. The URL is now built inside the handlers, which
+only run in a browser. A reminder that "the auth flow works" was evidence about one path, not the
+page.
+
+While there: the page's inputs were hand-rolled with a comment saying `ui.shadcn.com` was outside
+the allowed network domains. That has not been true for some time, so they are real `Input` and
+`Label` components now.
+
+**`next-themes` is gone.** It renders its no-flash script as a `<script>` element inside a client
+component, which React 19 warns about on every client render; the issue is known upstream
+(pacocoursey/next-themes#385, #387) with no fix and no release in over a year. The suggested
+workarounds were third-party forks, which is a worse trade on the first-paint path than fifty lines
+we understand. Ours injects the script with `useServerInsertedHTML` — the App Router's own
+mechanism for exactly this — and reads the stored choice with `useSyncExternalStore`, which has a
+real server snapshot rather than a hydration guess.
+
+One subtlety worth keeping: when the OS flips while "system" is selected, the stored value does not
+change, so `getSnapshot` returns the same string and React re-renders nothing. The class still has
+to move, so the subscription applies it directly. Same for a `storage` event from another tab.
+
+Verified in the browser in dev mode, where those React warnings actually fire: the form renders,
+the theme sets and persists, a fresh page already carries it, and the console is empty.
+
 **2026-11-12 — Task 10: the reward catalog.**
 Per-business CRUD, admin-only to change and rep-readable, with `/app/rewards` to manage it and
 `/advocate/rewards` to browse it.

@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { supabaseBrowser } from "@/lib/supabase/browser";
 import { safeRedirectPath } from "@/lib/safe-redirect";
 
@@ -15,9 +17,9 @@ type Mode = "magic-link" | "password";
  * once and forget is friction that costs participation. Reps who use Dealio
  * daily will want the password or Google.
  *
- * Styling is deliberately plain. `ui.shadcn.com` is outside this environment's
- * allowed network domains, so `input` and `label` could not be generated —
- * swap these for the shadcn components when that is unblocked.
+ * Note this is a client component that still renders on the server. `"use
+ * client"` means "ships to the browser too", not "browser only", so nothing
+ * here may touch `window` during render — see `callbackUrl` below.
  */
 export function SignInForm({ next }: { next: string }) {
   const [mode, setMode] = useState<Mode>("magic-link");
@@ -26,9 +28,22 @@ export function SignInForm({ next }: { next: string }) {
   const [status, setStatus] = useState<"idle" | "working" | "sent">("idle");
   const [error, setError] = useState<string | null>(null);
 
-  const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(
-    safeRedirectPath(next),
-  )}`;
+  /**
+   * Where Supabase sends people back to.
+   *
+   * Built inside the handlers rather than during render, because this
+   * component renders on the server first and `window` does not exist there —
+   * reading it at the top level crashed the page before anyone could type an
+   * address.
+   *
+   * It uses the live origin rather than a configured URL so a preview
+   * deployment sends people back to itself.
+   */
+  function callbackUrl() {
+    return `${window.location.origin}/auth/callback?next=${encodeURIComponent(
+      safeRedirectPath(next),
+    )}`;
+  }
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -40,7 +55,7 @@ export function SignInForm({ next }: { next: string }) {
     if (mode === "magic-link") {
       const { error } = await supabase.auth.signInWithOtp({
         email,
-        options: { emailRedirectTo: redirectTo },
+        options: { emailRedirectTo: callbackUrl() },
       });
       if (error) {
         setError(error.message);
@@ -65,7 +80,7 @@ export function SignInForm({ next }: { next: string }) {
     const supabase = supabaseBrowser();
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo },
+      options: { redirectTo: callbackUrl() },
     });
     if (error) setError(error.message);
   }
@@ -84,39 +99,30 @@ export function SignInForm({ next }: { next: string }) {
     );
   }
 
-  const inputClass =
-    "border-input bg-background w-full rounded-md border px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring";
-
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="space-y-1">
-        <label htmlFor="email" className="text-sm font-medium">
-          Email
-        </label>
-        <input
+      <div className="space-y-1.5">
+        <Label htmlFor="email">Email</Label>
+        <Input
           id="email"
           type="email"
           required
           autoComplete="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className={inputClass}
         />
       </div>
 
       {mode === "password" && (
-        <div className="space-y-1">
-          <label htmlFor="password" className="text-sm font-medium">
-            Password
-          </label>
-          <input
+        <div className="space-y-1.5">
+          <Label htmlFor="password">Password</Label>
+          <Input
             id="password"
             type="password"
             required
             autoComplete="current-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className={inputClass}
           />
         </div>
       )}
