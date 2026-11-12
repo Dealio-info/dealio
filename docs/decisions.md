@@ -304,6 +304,32 @@ is the problem.
 
 ## Log
 
+**2026-11-12 — Task 10: the reward catalog.**
+Per-business CRUD, admin-only to change and rep-readable, with `/app/rewards` to manage it and
+`/advocate/rewards` to browse it.
+
+Nothing deletes a reward. A redemption references the reward it was made against and Postgres
+refuses to drop a referenced row, so a delete would only ever succeed for rewards nobody wanted —
+`setRewardActive(false)` is the real operation. Withdrawn rewards stay listed and dimmed rather
+than vanishing, because a business that withdrew one has not deleted it and should be able to put
+it back. For the same reason there is no uniqueness constraint on the name: withdrawing "Coffee
+voucher" and adding a new one later is ordinary.
+
+Re-pricing is safe because a `Redemption` snapshots both `cost` and `rewardName` when it is
+requested — the decision made back in the prototype skim, now load-bearing.
+
+An advocate only ever sees active rewards, whatever `includeInactive` says; the flag is the
+business's own view of its own catalog. All four of those guards were mutation-tested.
+
+`soleBusinessActor` joins `soleTenantContext`: the one membership, or a refusal that distinguishes
+"none" from "several". Guessing between two memberships would silently act on the wrong company,
+and the two cases need different things said to the person — one is waiting for an invitation, the
+other for a feature.
+
+The advocate's reward card states the gap rather than greying out what they cannot afford. "Twelve
+more and this is yours" is a reason to do another quest; a disabled card is only a refusal, and
+that gap being visible is what the product runs on.
+
 **2026-11-12 — Task 9: the advocate side.**
 `/advocate` shows what each business has asked of a person, their balance, and the three responses
 their status allows. Composition over the existing services — `getAdvocateDashboard` gathers

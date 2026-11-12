@@ -134,6 +134,23 @@ and outcome handlers use deterministic event IDs so retries are safe.
 Next.js 16 + React 19 + TypeScript + Tailwind 4, shadcn/ui on Base UI, Vitest 5, ESLint 9 (flat
 config) with the database boundary, and Prisma 7 with the full domain schema migrated.
 
+**Through Task 10.** The per-business reward catalog: `createReward`, `updateReward`,
+`setRewardActive`, `listRewards`, `getReward`, `countActiveRewards`, plus `/app/rewards` to manage
+it and `/advocate/rewards` to browse it.
+
+- **Nothing deletes a reward.** A redemption references the reward it was made against and the
+  database refuses to drop a referenced row, so a delete would only ever work for rewards nobody
+  wanted. `setRewardActive(false)` withdraws it and leaves history resolvable; withdrawn rewards
+  stay listed, dimmed, with "Restore".
+- **No uniqueness on the name**, deliberately: withdrawing "Coffee voucher" and later adding a new
+  one is normal, and a unique index would block it.
+- **Re-pricing is safe** because a `Redemption` snapshots `cost` and `rewardName` at request time.
+- **An advocate only ever sees active rewards**, whatever `includeInactive` says. The flag is the
+  business's own view of its catalog; a withdrawn reward is not theirs to see.
+- **`soleBusinessActor`** in `context.ts` is the business-side `soleTenantContext`: the one
+  membership, or a refusal that distinguishes "none" from "several", because those need different
+  things said to the person.
+
 **Through Task 9.** The advocate side is real: `/advocate` lists what each business has asked of
 them, their balance, and Accept / Decline / Mark done. Three things worth keeping in mind when
 building the business side the same way.

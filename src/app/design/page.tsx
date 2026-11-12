@@ -3,6 +3,7 @@ import { Section } from "./theme-pair";
 import { BrandSwatches, SemanticSwatches, StatusSwatches } from "./swatches";
 import { StatusBadge } from "@/components/app/status-badge";
 import { QuestCard } from "@/components/app/quest-card";
+import { RewardCard } from "@/components/app/reward-card";
 import { CurrencyAmount } from "@/components/app/currency-amount";
 import { PageHeader } from "@/components/app/page-header";
 import { EmptyState } from "@/components/app/empty-state";
@@ -293,6 +294,27 @@ export default function DesignPage() {
             status="REWARDED"
             rewardAmount={8}
             quiet
+          />
+        </div>
+      </Section>
+
+      <Section
+        title="A reward, as the advocate sees it"
+        description="The gap is stated, not just the price. “Four more and this is yours” is a reason to do another quest; a greyed-out card is only a refusal."
+      >
+        <div className="grid gap-3 sm:grid-cols-2">
+          <RewardCard
+            name="$25 coffee card"
+            description="Delivered by email within two working days"
+            cost={5}
+            balance={8}
+            action={<Button size="sm">Claim</Button>}
+          />
+          <RewardCard
+            name="$100 Lululemon gift card"
+            description="Delivered by email"
+            cost={20}
+            balance={8}
           />
         </div>
       </Section>
