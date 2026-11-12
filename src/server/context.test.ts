@@ -12,6 +12,7 @@ import {
   advocateActor,
   businessActor,
   platformStaffActor,
+  soleBusinessActor,
   soleTenantContext,
   type Actor,
 } from "./context";
@@ -292,5 +293,52 @@ describe("soleTenantContext", () => {
       advocates: [{ advocateId: "a-3", businessId: OTHER_BUSINESS }],
     };
     expect(() => soleTenantContext(mixed)).toThrow(ForbiddenError);
+  });
+});
+
+describe("soleBusinessActor", () => {
+  const base = { user: { id: "u-1", email: "a@b.com" }, isPlatformStaff: false };
+
+  it("returns the only membership", () => {
+    const actor = soleBusinessActor({
+      ...base,
+      memberships: [{ businessId: BUSINESS, role: "REP" }],
+      advocates: [],
+    });
+    expect(actor).toMatchObject({
+      kind: "business",
+      businessId: BUSINESS,
+      role: "REP",
+    });
+  });
+
+  it("refuses when there is none, and says so", () => {
+    expect(() =>
+      soleBusinessActor({ ...base, memberships: [], advocates: [] }),
+    ).toThrow(/not a member of any business/);
+  });
+
+  it("refuses rather than guessing between two", () => {
+    expect(() =>
+      soleBusinessActor({
+        ...base,
+        memberships: [
+          { businessId: BUSINESS, role: "BUSINESS_ADMIN" },
+          { businessId: OTHER_BUSINESS, role: "REP" },
+        ],
+        advocates: [],
+      }),
+    ).toThrow(/more than one business/);
+  });
+
+  it("ignores advocate records, which are not staff", () => {
+    // Being a customer of one company and staff of another is ordinary, and
+    // must not make the staff context ambiguous.
+    const actor = soleBusinessActor({
+      ...base,
+      memberships: [{ businessId: BUSINESS, role: "REP" }],
+      advocates: [{ advocateId: "a-1", businessId: OTHER_BUSINESS }],
+    });
+    expect(actor.businessId).toBe(BUSINESS);
   });
 });

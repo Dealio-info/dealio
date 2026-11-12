@@ -272,6 +272,29 @@ export function platformStaffActor(identity: Identity): PlatformStaffActor {
 }
 
 /**
+ * The one business this person is staff of, or an error saying which problem
+ * it is.
+ *
+ * The business side of `soleTenantContext`, and it refuses for the same
+ * reason: picking the first membership would silently act on the wrong
+ * company. Distinguishing "none" from "several" matters because they need
+ * different things said to the person — one is waiting for an invitation, the
+ * other is waiting for a feature.
+ */
+export function soleBusinessActor(identity: Identity): BusinessActor {
+  const [membership, ...rest] = identity.memberships;
+  if (!membership) {
+    throw new ForbiddenError("This account is not a member of any business");
+  }
+  if (rest.length > 0) {
+    throw new ForbiddenError(
+      "This account belongs to more than one business; choosing between them is not built yet",
+    );
+  }
+  return businessActor(identity, membership.businessId);
+}
+
+/**
  * The convenience path for the common case: a user belonging to exactly one
  * business, in exactly one capacity.
  *
