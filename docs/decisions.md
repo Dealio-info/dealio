@@ -304,6 +304,41 @@ is the problem.
 
 ## Log
 
+**2026-11-12 — Task 11: redemption, and the write skew a re-read does not catch.**
+The loop closes: an advocate claims, an admin decides, and the debit is written in the same
+transaction as the status change.
+
+The plan said "`approveRedemption` re-reads the balance inside the transaction", and that alone is
+not enough. Two admins approving two _different_ redemptions for the same advocate touch different
+rows, so the status compare-and-swap sees no conflict and the `(redemptionId, reason)` unique index
+sees two distinct keys; at READ COMMITTED both transactions read the same balance and both insert.
+A balance of 10 pays out twice. The fix is a `SELECT … FOR UPDATE` on the advocate row taken before
+the balance is read, which makes the read-then-write window exclusive. **Credits take no lock on
+purpose** — they only raise the balance, so a concurrent credit can make the check conservative but
+never wrong. The test holds the first approval's transaction open after it has written and runs the
+second against the uncommitted debit; mutating the lock away fails it, which is the only way to know
+the lock is the thing doing the work rather than luck.
+
+Mutation testing also found the **status compare-and-swap unreachable while that lock holds** — the
+pre-check catches every second attempt first. Kept, because it costs nothing and still guards the
+status if the lock is ever removed, but recorded as not load-bearing so nobody later writes a test
+asserting that it is. Thirteen of fourteen mutations were caught; that one is the exception, and it
+is deliberate.
+
+**Decided: approval is admin-only, always.** `requireAdminApprovalForRewards` does not govern it.
+That flag is about a rep _awarding_ currency within a budget the business has already set; a
+redemption is the business spending real money on a prize it then has to buy and post. "Manual, never
+automatic" plus the safe-default principle both point the same way, and no customer has asked for
+the looser rule.
+
+**`getAvailableBalance` is a courtesy, not a guard.** Balance less whatever is already `REQUESTED`,
+so three 10-cost asks against a balance of 10 do not each look affordable and leave an admin to
+decline two. It is not transactional and two simultaneous requests can still get past it — which is
+exactly the state the approval path is tested against.
+
+Fulfilment is a status change and an optional order reference. Dealio moves no money and holds no
+float, so there is nothing else for it to be until Tremendous lands.
+
 **2026-11-12 — Two bugs on the sign-in page, and next-themes replaced.**
 Reported from the browser console, which is the only place either would have shown up.
 

@@ -134,6 +134,45 @@ and outcome handlers use deterministic event IDs so retries are safe.
 Next.js 16 + React 19 + TypeScript + Tailwind 4, shadcn/ui on Base UI, Vitest 5, ESLint 9 (flat
 config) with the database boundary, and Prisma 7 with the full domain schema migrated.
 
+**Through Task 11.** Redemption: `requestRedemption`, `approveRedemption`, `rejectRedemption`,
+`markRedemptionDelivered`, `listRedemptions`, `getRedemption`, `getAvailableBalance`,
+`countPendingRedemptions`, plus `/app/redemptions` to decide them and a Claim button and history on
+`/advocate/rewards`. This closes the loop, and it is the path the prototype lost money on, so the
+reasoning matters more here than anywhere else.
+
+- **An approval needs a row lock, not just a re-read.** Invariant 2 says the balance is re-read
+  inside the transaction, and on its own that is a write-skew: two admins approving two _different_
+  redemptions for the same advocate touch different rows, so neither the status compare-and-swap nor
+  the unique index notices, and at READ COMMITTED both read the same balance and both insert. A
+  balance of 10 pays out twice. `approveRedemption` therefore takes `SELECT … FOR UPDATE` on the
+  advocate row first, which makes the read-then-write window exclusive. **Credits deliberately take
+  no lock** — they only ever raise the balance, so a concurrent credit can make the check
+  conservative but never wrong.
+- **The compare-and-swap on `status` is unreachable while that lock holds**, and mutation testing
+  says so: the pre-check catches every second attempt first. It is kept because it costs nothing and
+  still guards the status if the lock is ever removed — but do not write a test claiming it is
+  load-bearing, because it is not.
+- **Approval is admin-only, always**, and `requireAdminApprovalForRewards` does not govern it. That
+  flag is about a rep _awarding_ currency; a redemption is the business paying real money out. The
+  safe default wins until a customer asks otherwise.
+- **`getAvailableBalance` is a courtesy, not a guard.** Balance less whatever is already `REQUESTED`,
+  so three 10-cost asks against a balance of 10 cannot each look affordable and leave an admin to
+  clean up two failures. It is not a lock and two simultaneous requests can still get past it; the
+  approval path is written to survive that, and a test covers it.
+- **Fulfilment moves no money.** `markRedemptionDelivered` is a status change plus an optional order
+  reference. The business buys and sends the prize; Dealio holds no float. When Tremendous lands,
+  that is where the order id goes.
+- **Rejection writes nothing to the ledger**, because nothing was ever taken, and the committed
+  currency becomes available again.
+- **A `Redemption` snapshots `cost` and `rewardName`**, so re-pricing the catalog cannot change what
+  an advocate was promised. There is a test that approves at the old price after an edit.
+- **`REQUESTED` exists in both lifecycles and means different things**, so `StatusBadge` takes a
+  `kind` and `terms.ts` carries a separate `REDEMPTION_STATUS` map. One merged table would put "Sent"
+  on a redemption waiting for a decision.
+- **`RedemptionRow` serves both audiences** — the business names the advocate and decides, the
+  advocate reads their own history — differing only in labels and the `action` prop. Two components
+  would drift, which is the lesson from the style guide's hand-copied quest card.
+
 **Through Task 10.** The per-business reward catalog: `createReward`, `updateReward`,
 `setRewardActive`, `listRewards`, `getReward`, `countActiveRewards`, plus `/app/rewards` to manage
 it and `/advocate/rewards` to browse it.
