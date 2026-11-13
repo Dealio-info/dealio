@@ -304,6 +304,30 @@ is the problem.
 
 ## Log
 
+**2026-11-13 — Task 12.5: the business side can drive the loop, and invites can be claimed.**
+Added to the plan after Task 12 found the business-side pages missing. Building it found a second,
+larger gap: **no route in the app called `claimInvite`**, so an invited advocate had no way to
+become one in a browser. `/invite/[token]` closes that.
+
+Decisions:
+
+- **Claim on POST, never on GET.** The page previews; accepting is a button. Link scanners and
+  prefetchers would otherwise consume the single-use token before the person arrived.
+- **A signed-in user whose email differs from the invited address may still accept**, with a notice
+  saying which account the invite will be linked to. The token is the credential — matching on email
+  is exactly what the rebuild refuses to do — and people use work and personal addresses
+  interchangeably. The notice is there so nobody attaches the wrong account by accident.
+- **Invite links are copied by hand until Task 14** sends email. The link is shown once, because only
+  its hash is stored; "New link" re-issues it.
+- **Quest moves are verbs (`send | verify | award | cancel`), and the buttons offered are derived from
+  `canTransition`**, so the UI cannot drift from the state machine.
+- **Influenced revenue is entered in dollars** — how people think about deal size — and anything that
+  is not an exact number of cents is refused rather than rounded.
+- **Cancelling asks for confirmation**; it is terminal and sits beside buttons that are not.
+
+The **`NEXT_PUBLIC_APP_URL`** action item now matters: invite links are built from it and fall back to
+`http://localhost:3000`, which is right for local work and wrong anywhere else.
+
 **2026-11-13 — Task 12: dashboard and settings, and a gap in the plan.**
 `/app` is now a dashboard (what is waiting, what advocacy has been worth, the quest pipeline, who is
 owed what) and `/app/settings` edits the approval policy. Numbers come from a new `analytics`
@@ -322,7 +346,7 @@ Decisions made along the way:
   sign-off and hiding it only makes the buttons confusing. The change itself is refused in the
   service, which a test has covered since Task 5.
 
-**Open — the business side cannot create anything yet.** `/app/advocates` and `/app/quests` are
+**Resolved by Task 12.5 — the business side could not create anything yet.** `/app/advocates` and `/app/quests` are
 still the placeholders from the design pass: the services behind them (invite, create, publish,
 verify with a revenue amount, reward) are done and tested, but there is no page to drive them. No
 task in the plan builds them — Tasks 6 and 7 were service-layer, and 12 and 13 are dashboards — yet
