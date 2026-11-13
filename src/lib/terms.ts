@@ -80,16 +80,50 @@ export const OPPORTUNITY_STATUS: Record<
   CANCELLED: { label: "Cancelled", role: "failed" },
 };
 
+/**
+ * What each redemption status is called.
+ *
+ * A separate map from the quest statuses rather than one merged table, because
+ * `REQUESTED` means different things in the two lifecycles — a quest the
+ * business has sent out, and a reward an advocate has asked for — and would
+ * otherwise read with the wrong label on half the pages.
+ *
+ * The two audiences diverge more here than anywhere else. "Approved" tells an
+ * admin the decision is recorded; it tells an advocate their prize is coming,
+ * which is the part they care about. `DELIVERED` is the business's "sent" and
+ * the advocate's "received", and that is the same event seen from both ends.
+ */
+export const REDEMPTION_STATUS: Record<
+  string,
+  { readonly label: string; readonly advocate?: string; readonly role: StatusRole }
+> = {
+  REQUESTED: { label: "Awaiting approval", advocate: "Requested", role: "waiting" },
+  APPROVED: { label: "Approved", advocate: "On its way", role: "active" },
+  ORDERED: { label: "Ordered", advocate: "On its way", role: "active" },
+  DELIVERED: { label: "Sent", advocate: "Received", role: "success" },
+  REJECTED: { label: "Declined", role: "failed" },
+  FAILED: { label: "Failed", role: "failed" },
+};
+
+const STATUS_MAPS = {
+  quest: OPPORTUNITY_STATUS,
+  redemption: REDEMPTION_STATUS,
+} as const;
+
+/** Which lifecycle a status belongs to. They have overlapping value names. */
+export type StatusKind = keyof typeof STATUS_MAPS;
+
 /** The label for a status, from the point of view of whoever is looking. */
 export function statusLabel(
   status: string,
   audience: "business" | "advocate" = "business",
+  kind: StatusKind = "quest",
 ): string {
-  const entry = OPPORTUNITY_STATUS[status];
+  const entry = STATUS_MAPS[kind][status];
   if (!entry) return status;
   return audience === "advocate" ? (entry.advocate ?? entry.label) : entry.label;
 }
 
-export function statusRole(status: string): StatusRole {
-  return OPPORTUNITY_STATUS[status]?.role ?? "waiting";
+export function statusRole(status: string, kind: StatusKind = "quest"): StatusRole {
+  return STATUS_MAPS[kind][status]?.role ?? "waiting";
 }

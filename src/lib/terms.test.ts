@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
+  OPPORTUNITY_STATUS,
+  REDEMPTION_STATUS,
+  TERMS,
   capitalize,
   countOf,
-  OPPORTUNITY_STATUS,
   statusLabel,
   statusRole,
-  TERMS,
 } from "./terms";
 
 /**
@@ -91,5 +92,50 @@ describe("statusLabel", () => {
   it("passes an unknown status through rather than throwing", () => {
     expect(statusLabel("WAT")).toBe("WAT");
     expect(statusRole("WAT")).toBe("waiting");
+  });
+});
+
+describe("redemption statuses", () => {
+  it("covers every value in the schema", () => {
+    for (const s of [
+      "REQUESTED",
+      "APPROVED",
+      "ORDERED",
+      "DELIVERED",
+      "FAILED",
+      "REJECTED",
+    ]) {
+      expect(REDEMPTION_STATUS[s], s).toBeDefined();
+      expect(statusLabel(s, "business", "redemption"), s).not.toBe(s);
+    }
+  });
+
+  it("reads REQUESTED differently in each lifecycle", () => {
+    // The reason the badge takes a kind at all. A quest's REQUESTED has been
+    // sent to an advocate; a redemption's is waiting on an admin. One merged
+    // table would put the wrong word on half the pages.
+    expect(statusLabel("REQUESTED", "business", "quest")).toBe("Sent");
+    expect(statusLabel("REQUESTED", "business", "redemption")).toBe(
+      "Awaiting approval",
+    );
+  });
+
+  it("tells the advocate what the decision means for them", () => {
+    expect(statusLabel("APPROVED", "advocate", "redemption")).toBe("On its way");
+    expect(statusLabel("DELIVERED", "business", "redemption")).toBe("Sent");
+    expect(statusLabel("DELIVERED", "advocate", "redemption")).toBe("Received");
+  });
+
+  it("defaults to the quest lifecycle", () => {
+    expect(statusLabel("REQUESTED")).toBe(
+      statusLabel("REQUESTED", "business", "quest"),
+    );
+    expect(statusRole("APPROVED")).toBe("waiting");
+    expect(statusRole("APPROVED", "redemption")).toBe("active");
+  });
+
+  it("passes an unknown value through", () => {
+    expect(statusLabel("WAT", "business", "redemption")).toBe("WAT");
+    expect(statusRole("WAT", "redemption")).toBe("waiting");
   });
 });

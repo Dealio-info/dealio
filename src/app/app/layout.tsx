@@ -21,6 +21,7 @@ const NAV: readonly NavItem[] = [
   { href: "/app/advocates", label: capitalize(TERMS.advocate.many) },
   { href: "/app/quests", label: capitalize(TERMS.quest.many) },
   { href: "/app/rewards", label: capitalize(TERMS.reward.many) },
+  { href: "/app/redemptions", label: "Redemptions" },
   { href: "/app/settings", label: "Settings" },
 ];
 

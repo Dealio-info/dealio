@@ -134,6 +134,74 @@ and outcome handlers use deterministic event IDs so retries are safe.
 Next.js 16 + React 19 + TypeScript + Tailwind 4, shadcn/ui on Base UI, Vitest 5, ESLint 9 (flat
 config) with the database boundary, and Prisma 7 with the full domain schema migrated.
 
+**Through Task 12.** The business dashboard at `/app` and the approval-policy form at
+`/app/settings`, over a new `analytics` module (`getDashboardSummary`, `listAdvocateBalances`) and
+`tenancy/getBusinessProfile`.
+
+- **Every dashboard number comes from `analytics/dashboard.ts`.** The page only arranges them. If
+  a page wants "one more count", that is a missing service function, not a reason to query.
+  `getBusinessProfile` exists for the same reason: `/advocate/rewards` had been reading the
+  business name with `prisma.business.findUniqueOrThrow` directly in the page.
+- **Currency figures reconcile by construction:** `awarded − redeemed + adjusted = outstanding`,
+  each a sum over ledger reasons via an exhaustive `Record<LedgerReason, …>`, so a new reason fails
+  to compile until it is bucketed. `FULFILLMENT_FAILED` nets against _redeemed_, not _awarded_ — a
+  refunded order is not new currency earned. `outstanding` is checked against
+  `getOutstandingLiability` in a test, so the two definitions cannot drift.
+- **Influenced revenue counts `VERIFIED` and `REWARDED` only.** `VERIFIED → CANCELLED` exists, and a
+  quest cancelled after verification did not stand; its recorded amount must not inflate a number a
+  business will quote.
+- **Real money is `src/lib/money.ts`, integer cents as `BigInt`, never a float.** `formatCents`
+  rounds in integer arithmetic. It **assumes USD** — no business has a currency yet.
+- **Settings: admins edit, reps read.** A rep sees the policy in force, read-only; the server action
+  relies on `updateApprovalPolicy` to refuse them rather than checking twice. Saved with an explicit
+  button, not on toggle, and each switch describes its current position in words. Changing it is
+  forward-only, and a test now proves it: a quest a rep paid out under the delegated policy keeps
+  every event and ledger row byte-for-byte after the policy is tightened.
+- **Mutation testing: 12 guards, 11 caught.** The survivor is the `businessId` scope on
+  `listAdvocateBalances`' ledger grouping — the result is only looked up by the business's own
+  advocate ids, so it cannot leak. Kept and commented as not load-bearing.
+- **`-0` is a real hazard in sums.** `-x` of an empty sum is `-0`, which equals `0` but can print as
+  "-0". Write `0 - x`.
+
+**Through Task 11.** Redemption: `requestRedemption`, `approveRedemption`, `rejectRedemption`,
+`markRedemptionDelivered`, `listRedemptions`, `getRedemption`, `getAvailableBalance`,
+`countPendingRedemptions`, plus `/app/redemptions` to decide them and a Claim button and history on
+`/advocate/rewards`. This closes the loop, and it is the path the prototype lost money on, so the
+reasoning matters more here than anywhere else.
+
+- **An approval needs a row lock, not just a re-read.** Invariant 2 says the balance is re-read
+  inside the transaction, and on its own that is a write-skew: two admins approving two _different_
+  redemptions for the same advocate touch different rows, so neither the status compare-and-swap nor
+  the unique index notices, and at READ COMMITTED both read the same balance and both insert. A
+  balance of 10 pays out twice. `approveRedemption` therefore takes `SELECT … FOR UPDATE` on the
+  advocate row first, which makes the read-then-write window exclusive. **Credits deliberately take
+  no lock** — they only ever raise the balance, so a concurrent credit can make the check
+  conservative but never wrong.
+- **The compare-and-swap on `status` is unreachable while that lock holds**, and mutation testing
+  says so: the pre-check catches every second attempt first. It is kept because it costs nothing and
+  still guards the status if the lock is ever removed — but do not write a test claiming it is
+  load-bearing, because it is not.
+- **Approval is admin-only, always**, and `requireAdminApprovalForRewards` does not govern it. That
+  flag is about a rep _awarding_ currency; a redemption is the business paying real money out. The
+  safe default wins until a customer asks otherwise.
+- **`getAvailableBalance` is a courtesy, not a guard.** Balance less whatever is already `REQUESTED`,
+  so three 10-cost asks against a balance of 10 cannot each look affordable and leave an admin to
+  clean up two failures. It is not a lock and two simultaneous requests can still get past it; the
+  approval path is written to survive that, and a test covers it.
+- **Fulfilment moves no money.** `markRedemptionDelivered` is a status change plus an optional order
+  reference. The business buys and sends the prize; Dealio holds no float. When Tremendous lands,
+  that is where the order id goes.
+- **Rejection writes nothing to the ledger**, because nothing was ever taken, and the committed
+  currency becomes available again.
+- **A `Redemption` snapshots `cost` and `rewardName`**, so re-pricing the catalog cannot change what
+  an advocate was promised. There is a test that approves at the old price after an edit.
+- **`REQUESTED` exists in both lifecycles and means different things**, so `StatusBadge` takes a
+  `kind` and `terms.ts` carries a separate `REDEMPTION_STATUS` map. One merged table would put "Sent"
+  on a redemption waiting for a decision.
+- **`RedemptionRow` serves both audiences** — the business names the advocate and decides, the
+  advocate reads their own history — differing only in labels and the `action` prop. Two components
+  would drift, which is the lesson from the style guide's hand-copied quest card.
+
 **Through Task 10.** The per-business reward catalog: `createReward`, `updateReward`,
 `setRewardActive`, `listRewards`, `getReward`, `countActiveRewards`, plus `/app/rewards` to manage
 it and `/advocate/rewards` to browse it.

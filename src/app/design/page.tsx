@@ -4,6 +4,7 @@ import { BrandSwatches, SemanticSwatches, StatusSwatches } from "./swatches";
 import { StatusBadge } from "@/components/app/status-badge";
 import { QuestCard } from "@/components/app/quest-card";
 import { RewardCard } from "@/components/app/reward-card";
+import { RedemptionRow } from "@/components/app/redemption-row";
 import { CurrencyAmount } from "@/components/app/currency-amount";
 import { PageHeader } from "@/components/app/page-header";
 import { EmptyState } from "@/components/app/empty-state";
@@ -50,6 +51,24 @@ const STATUSES = [
   "DECLINED",
   "CANCELLED",
 ];
+
+const REDEMPTION_STATUSES = [
+  "REQUESTED",
+  "APPROVED",
+  "DELIVERED",
+  "REJECTED",
+  "FAILED",
+];
+
+const SAMPLE_REDEMPTION = {
+  id: "sample",
+  rewardName: "$25 coffee card",
+  cost: 5,
+  status: "REQUESTED",
+  requestedAt: new Date("2026-03-04T09:00:00Z"),
+  failureReason: null,
+  advocate: { name: "Dana Whitfield", email: "dana@acme.example" },
+};
 
 /**
  * The living style guide.
@@ -163,6 +182,30 @@ export default function DesignPage() {
             <div className="flex flex-wrap gap-1.5">
               {STATUSES.map((s) => (
                 <StatusBadge key={s} status={s} audience="advocate" />
+              ))}
+            </div>
+          </div>
+        </div>
+      </Section>
+
+      <Section
+        title="Redemption statuses"
+        description="A second lifecycle, with its own copy. “Requested” exists in both and means different things, which is why the badge takes a kind rather than guessing from the value."
+      >
+        <div className="space-y-3">
+          <div className="space-y-1">
+            <p className="text-muted-foreground text-xs">Business</p>
+            <div className="flex flex-wrap gap-1.5">
+              {REDEMPTION_STATUSES.map((s) => (
+                <StatusBadge key={s} status={s} kind="redemption" />
+              ))}
+            </div>
+          </div>
+          <div className="space-y-1">
+            <p className="text-muted-foreground text-xs">Advocate</p>
+            <div className="flex flex-wrap gap-1.5">
+              {REDEMPTION_STATUSES.map((s) => (
+                <StatusBadge key={s} status={s} kind="redemption" audience="advocate" />
               ))}
             </div>
           </div>
@@ -315,6 +358,35 @@ export default function DesignPage() {
             description="Delivered by email"
             cost={20}
             balance={8}
+          />
+        </div>
+      </Section>
+
+      <Section
+        title="A redemption, in a queue"
+        description="One row, both audiences. The business names the advocate and decides; the advocate reads their own history and does not. Same facts, same component."
+      >
+        <div className="space-y-3">
+          <RedemptionRow
+            redemption={SAMPLE_REDEMPTION}
+            action={
+              <div className="flex gap-2">
+                <Button size="sm">Approve</Button>
+                <Button size="sm" variant="outline">
+                  Decline
+                </Button>
+              </div>
+            }
+          />
+          <RedemptionRow
+            redemption={{
+              ...SAMPLE_REDEMPTION,
+              id: "sample-2",
+              status: "REJECTED",
+              failureReason: "That card is out of stock — try the voucher instead.",
+            }}
+            audience="advocate"
+            showAdvocate={false}
           />
         </div>
       </Section>

@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { statusLabel, statusRole } from "@/lib/terms";
+import { statusLabel, statusRole, type StatusKind } from "@/lib/terms";
 
 /**
  * A lifecycle status, labelled and colour-coded consistently everywhere.
@@ -21,21 +21,24 @@ const ROLE_CLASSES = {
 export function StatusBadge({
   status,
   audience = "business",
+  kind = "quest",
   className,
 }: {
   status: string;
   audience?: "business" | "advocate";
+  /** Which lifecycle the value belongs to — `REQUESTED` exists in both. */
+  kind?: StatusKind;
   className?: string;
 }) {
   return (
     <span
       className={cn(
         "inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium whitespace-nowrap",
-        ROLE_CLASSES[statusRole(status)],
+        ROLE_CLASSES[statusRole(status, kind)],
         className,
       )}
     >
-      {statusLabel(status, audience)}
+      {statusLabel(status, audience, kind)}
     </span>
   );
 }

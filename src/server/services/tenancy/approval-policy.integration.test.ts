@@ -8,6 +8,8 @@ import {
 import { disconnectTestPrisma, resetDb, testPrisma } from "@/test/integration/harness";
 import { makeAdvocate, makeBusiness, makeUser } from "@/test/integration/fixtures";
 import { getApprovalPolicy, updateApprovalPolicy } from "./approval-policy";
+import { createOpportunity } from "@/server/services/opportunities/create-opportunity";
+import { transitionOpportunity } from "@/server/services/opportunities/transition-opportunity";
 
 const prisma = testPrisma();
 
@@ -171,5 +173,73 @@ describe("updateApprovalPolicy", () => {
     });
     expect(untouched.requireAdminApprovalForOpportunities).toBe(true);
     expect(untouched.requireAdminApprovalForRewards).toBe(true);
+  });
+});
+
+describe("changing the policy is forward-only", () => {
+  it("leaves every existing event and ledger row exactly as it was", async () => {
+    const [business, admin, repUser, advocateUser] = await Promise.all([
+      makeBusiness({
+        requireAdminApprovalForOpportunities: false,
+        requireAdminApprovalForRewards: false,
+      }),
+      makeUser(),
+      makeUser(),
+      makeUser(),
+    ]);
+    const advocate = await makeAdvocate(business.id);
+    const rep = repOf(business.id, repUser.id);
+    const adv: ServiceContext = {
+      db: prisma,
+      actor: {
+        kind: "advocate",
+        userId: advocateUser.id,
+        businessId: business.id,
+        advocateId: advocate.id,
+      },
+    };
+
+    // Under the delegated policy a rep carries a quest all the way to paid.
+    const opp = await createOpportunity(rep, {
+      advocateId: advocate.id,
+      type: "TESTIMONIAL",
+      title: "Testimonial",
+      rewardAmount: 7,
+    });
+    await transitionOpportunity(rep, { opportunityId: opp.id, to: "REQUESTED" });
+    await transitionOpportunity(adv, { opportunityId: opp.id, to: "ACCEPTED" });
+    await transitionOpportunity(adv, { opportunityId: opp.id, to: "COMPLETED" });
+    await transitionOpportunity(rep, { opportunityId: opp.id, to: "VERIFIED" });
+    await transitionOpportunity(rep, { opportunityId: opp.id, to: "REWARDED" });
+
+    const snapshot = async () => ({
+      events: await prisma.opportunityEvent.findMany({ orderBy: { createdAt: "asc" } }),
+      ledger: await prisma.ledgerEntry.findMany({ orderBy: { createdAt: "asc" } }),
+      opportunity: await prisma.opportunity.findUniqueOrThrow({
+        where: { id: opp.id },
+      }),
+    });
+    const before = await snapshot();
+    expect(before.ledger).toHaveLength(1);
+
+    await updateApprovalPolicy(adminOf(business.id, admin.id), {
+      requireAdminApprovalForOpportunities: true,
+      requireAdminApprovalForRewards: true,
+    });
+
+    // Nothing about what already happened changes to match the new setting:
+    // the quest the rep paid out stays paid, by the rep, with its history.
+    expect(await snapshot()).toEqual(before);
+
+    // But the very next action is held to the new policy.
+    const next = await createOpportunity(rep, {
+      advocateId: advocate.id,
+      type: "TESTIMONIAL",
+      title: "Another",
+      rewardAmount: 7,
+    });
+    await expect(
+      transitionOpportunity(rep, { opportunityId: next.id, to: "REQUESTED" }),
+    ).rejects.toThrow(ForbiddenError);
   });
 });
