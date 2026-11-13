@@ -2,6 +2,7 @@ import { requireIdentity } from "@/server/auth";
 import { prisma } from "@/server/db";
 import { advocateActor } from "@/server/context";
 import { listRewards } from "@/server/services/rewards/catalog";
+import { getBusinessProfile } from "@/server/services/tenancy/business-profile";
 import { getBalance } from "@/server/services/rewards/balance";
 import {
   getAvailableBalance,
@@ -37,10 +38,7 @@ export default async function AdvocateRewardsPage() {
       const actor = advocateActor(identity, profile.businessId);
       const ctx = { db: prisma, actor };
       const [business, rewards, balance, available, redemptions] = await Promise.all([
-        prisma.business.findUniqueOrThrow({
-          where: { id: profile.businessId },
-          select: { name: true },
-        }),
+        getBusinessProfile(ctx),
         listRewards(ctx),
         getBalance(ctx, { advocateId: profile.advocateId }),
         getAvailableBalance(ctx, { advocateId: profile.advocateId }),

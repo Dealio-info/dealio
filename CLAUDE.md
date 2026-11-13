@@ -134,6 +134,35 @@ and outcome handlers use deterministic event IDs so retries are safe.
 Next.js 16 + React 19 + TypeScript + Tailwind 4, shadcn/ui on Base UI, Vitest 5, ESLint 9 (flat
 config) with the database boundary, and Prisma 7 with the full domain schema migrated.
 
+**Through Task 12.** The business dashboard at `/app` and the approval-policy form at
+`/app/settings`, over a new `analytics` module (`getDashboardSummary`, `listAdvocateBalances`) and
+`tenancy/getBusinessProfile`.
+
+- **Every dashboard number comes from `analytics/dashboard.ts`.** The page only arranges them. If
+  a page wants "one more count", that is a missing service function, not a reason to query.
+  `getBusinessProfile` exists for the same reason: `/advocate/rewards` had been reading the
+  business name with `prisma.business.findUniqueOrThrow` directly in the page.
+- **Currency figures reconcile by construction:** `awarded − redeemed + adjusted = outstanding`,
+  each a sum over ledger reasons via an exhaustive `Record<LedgerReason, …>`, so a new reason fails
+  to compile until it is bucketed. `FULFILLMENT_FAILED` nets against _redeemed_, not _awarded_ — a
+  refunded order is not new currency earned. `outstanding` is checked against
+  `getOutstandingLiability` in a test, so the two definitions cannot drift.
+- **Influenced revenue counts `VERIFIED` and `REWARDED` only.** `VERIFIED → CANCELLED` exists, and a
+  quest cancelled after verification did not stand; its recorded amount must not inflate a number a
+  business will quote.
+- **Real money is `src/lib/money.ts`, integer cents as `BigInt`, never a float.** `formatCents`
+  rounds in integer arithmetic. It **assumes USD** — no business has a currency yet.
+- **Settings: admins edit, reps read.** A rep sees the policy in force, read-only; the server action
+  relies on `updateApprovalPolicy` to refuse them rather than checking twice. Saved with an explicit
+  button, not on toggle, and each switch describes its current position in words. Changing it is
+  forward-only, and a test now proves it: a quest a rep paid out under the delegated policy keeps
+  every event and ledger row byte-for-byte after the policy is tightened.
+- **Mutation testing: 12 guards, 11 caught.** The survivor is the `businessId` scope on
+  `listAdvocateBalances`' ledger grouping — the result is only looked up by the business's own
+  advocate ids, so it cannot leak. Kept and commented as not load-bearing.
+- **`-0` is a real hazard in sums.** `-x` of an empty sum is `-0`, which equals `0` but can print as
+  "-0". Write `0 - x`.
+
 **Through Task 11.** Redemption: `requestRedemption`, `approveRedemption`, `rejectRedemption`,
 `markRedemptionDelivered`, `listRedemptions`, `getRedemption`, `getAvailableBalance`,
 `countPendingRedemptions`, plus `/app/redemptions` to decide them and a Claim button and history on

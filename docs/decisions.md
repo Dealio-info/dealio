@@ -304,6 +304,31 @@ is the problem.
 
 ## Log
 
+**2026-11-13 — Task 12: dashboard and settings, and a gap in the plan.**
+`/app` is now a dashboard (what is waiting, what advocacy has been worth, the quest pipeline, who is
+owed what) and `/app/settings` edits the approval policy. Numbers come from a new `analytics`
+module, tenant-scoped and tested against fixtures built through the real state machine.
+
+Decisions made along the way:
+
+- **Influenced revenue counts only `VERIFIED` and `REWARDED` quests.** An admin can cancel a
+  verified quest, and its recorded amount should not survive that.
+- **A refunded fulfilment nets against "redeemed"**, so a failed Tremendous order does not read as
+  extra currency awarded.
+- **Money is displayed as whole USD.** No business has a currency of its own; when one does it
+  becomes a parameter of `formatCents`.
+- **Reps can read the settings page but not change it.** The plan said "unreachable for a REP"; read
+  as "a rep cannot change it", because the policy decides whether a rep's own actions wait for
+  sign-off and hiding it only makes the buttons confusing. The change itself is refused in the
+  service, which a test has covered since Task 5.
+
+**Open — the business side cannot create anything yet.** `/app/advocates` and `/app/quests` are
+still the placeholders from the design pass: the services behind them (invite, create, publish,
+verify with a revenue amount, reward) are done and tested, but there is no page to drive them. No
+task in the plan builds them — Tasks 6 and 7 were service-layer, and 12 and 13 are dashboards — yet
+the plan's end-to-end walk depends on them. Until they exist, the dashboard can only show seeded
+data. Proposed: a Task 12.5 for those two pages before Task 13.
+
 **2026-11-12 — Task 11: redemption, and the write skew a re-read does not catch.**
 The loop closes: an advocate claims, an admin decides, and the debit is written in the same
 transaction as the status change.
