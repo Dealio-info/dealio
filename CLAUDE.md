@@ -134,6 +134,34 @@ and outcome handlers use deterministic event IDs so retries are safe.
 Next.js 16 + React 19 + TypeScript + Tailwind 4, shadcn/ui on Base UI, Vitest 5, ESLint 9 (flat
 config) with the database boundary, and Prisma 7 with the full domain schema migrated.
 
+**Through Task 13.** The advocate's home at `/advocate` is a dashboard: what needs them, their
+balance (with what is free and what is held for a claim), lifetime earnings, rewards within reach
+with Claim buttons, open claims, and a history of currency in and out — per business, never merged.
+
+- **`getAdvocateDashboard` is the only read either advocate page makes.** It composes
+  `getBusinessProfile`, `getBalance`, `getAvailableBalance`, `listOpportunities`, `listRewards`,
+  `listRedemptions` and `listLedgerEntries` — each of which already scopes an advocate to their own
+  rows — and adds nothing that queries. `/advocate/rewards` reads it too, so the two pages cannot
+  disagree about a balance.
+- **Activity labels are joined from records already loaded**: a credit shows its quest's title, a
+  debit or refund its reward's name. A ledger line for this advocate can only point at their own
+  quests and requests, so nothing needs fetching. **A `MANUAL_ADJUSTMENT` note is never passed to
+  the advocate** — staff write it for staff — and a test fails if internal text leaks.
+- **Advocate buttons are derived from `canTransition` too**, via `availableAdvocateVerbs` in
+  `opportunities/advocate-verbs.ts`; the server action reads the same `ADVOCATE_VERBS` map. The
+  hand-written per-status table on the page is gone. Advocates cannot read the approval policy, so
+  the helper passes the strictest one — no advocate edge reads it, and a test sweeps both policies.
+- **Affordability on the advocate side is measured against what is free, everywhere** — the Claim
+  button, the reward card's "you have enough" line, and "within reach". `/advocate/rewards` had
+  measured the card against the headline balance while the button used what was free, so a card
+  could say "you have enough" above a disabled button.
+- **Verbs validate with `z.custom<Verb>((v) => typeof v === "string" && isVerb(v))`**, which types
+  the parsed value as the verb. `z.string().refine(isVerb)` leaves it a `string` and invites a cast.
+- **`business-section.tsx` is split out of the page so it can be render-tested** with sample data
+  (`business-section.test.tsx`, server actions mocked). A Next page module may only export what Next
+  allows, and the signed-in page is unreachable from a test. Mutation testing found the first
+  version's sample data could not tell "free" from "balance"; the data now makes them disagree.
+
 **Through Task 12.5** (added to the plan 2026-11-13). The business side can now drive the whole loop
 in the browser: `/app/advocates` invites and lists, `/app/quests` creates and moves quests, and
 `/invite/[token]` is where an invited advocate claims. Before this, Tasks 6 and 7 had services but no

@@ -5,6 +5,7 @@ import { StatusBadge } from "@/components/app/status-badge";
 import { QuestCard } from "@/components/app/quest-card";
 import { RewardCard } from "@/components/app/reward-card";
 import { RedemptionRow } from "@/components/app/redemption-row";
+import { ActivityRow, type ActivityItem } from "@/components/app/activity-row";
 import { CurrencyAmount } from "@/components/app/currency-amount";
 import { PageHeader } from "@/components/app/page-header";
 import { EmptyState } from "@/components/app/empty-state";
@@ -370,6 +371,35 @@ export default function DesignPage() {
             quiet
           />
         </div>
+      </Section>
+
+      <Section
+        title="Currency in and out"
+        description="An advocate's history, signed both ways with a real minus sign. Labels come from the quest or reward each line was for; a staff correction shows who made it but never the staff note."
+      >
+        <ul className="divide-y">
+          {[
+            { id: "a1", delta: -2, reason: "MANUAL_ADJUSTMENT", label: null },
+            { id: "a2", delta: -5, reason: "REDEMPTION", label: "Coffee card" },
+            { id: "a3", delta: 5, reason: "FULFILLMENT_FAILED", label: "Gift card" },
+            {
+              id: "a4",
+              delta: 20,
+              reason: "OPPORTUNITY_REWARD",
+              label: "Reference call with Globex",
+            },
+          ].map((item) => (
+            <ActivityRow
+              key={item.id}
+              businessName="Acme"
+              item={{
+                ...item,
+                reason: item.reason as ActivityItem["reason"],
+                createdAt: new Date("2026-03-04T09:00:00Z"),
+              }}
+            />
+          ))}
+        </ul>
       </Section>
 
       <Section

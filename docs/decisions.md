@@ -304,6 +304,26 @@ is the problem.
 
 ## Log
 
+**2026-11-15 — Task 13: the advocate dashboard.**
+`/advocate` now shows, per business: what needs the advocate, their balance with what is free and
+what is held for a claim, lifetime earnings, rewards within reach, open claims, and recent currency
+movements. No new data access — one composed read over services that already scope an advocate to
+their own rows, shared by both advocate pages.
+
+Decisions:
+
+- **"Within reach" is what is affordable now plus the cheapest thing that is not**, so there is
+  always a next goal in view, not only rewards already won.
+- **Everything advocate-facing measures affordability against what is free**, not the headline
+  balance. Currency held for a pending claim cannot be spent twice, and showing it as spendable only
+  produces a refusal.
+- **A staff adjustment appears in the advocate's history as "Adjustment by {business}"**, with the
+  amount but without the staff note. Notes are written for colleagues; an advocate who asks can be
+  told.
+- **"Earned in total" counts quest credits only.** Spending does not reduce it, and a refund after a
+  failed order is not earnings.
+- **The advocate nav's first tab is "Dashboard"**, since the page is no longer only quests.
+
 **2026-11-13 — Task 12.5: the business side can drive the loop, and invites can be claimed.**
 Added to the plan after Task 12 found the business-side pages missing. Building it found a second,
 larger gap: **no route in the app called `claimInvite`**, so an invited advocate had no way to

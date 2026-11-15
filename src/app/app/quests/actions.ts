@@ -11,6 +11,7 @@ import { transitionOpportunity } from "@/server/services/opportunities/transitio
 import {
   BUSINESS_VERBS,
   isBusinessVerb,
+  type BusinessVerb,
 } from "@/server/services/opportunities/business-verbs";
 import { parseDollarsToCents } from "@/lib/money";
 
@@ -100,7 +101,7 @@ export async function createQuest(
 
 const actSchema = z.object({
   opportunityId: z.uuid(),
-  verb: z.string().refine(isBusinessVerb),
+  verb: z.custom<BusinessVerb>((v) => typeof v === "string" && isBusinessVerb(v)),
   revenue: z.string().optional(),
 });
 
@@ -120,7 +121,7 @@ export async function actOnQuest(
     verb: formData.get("verb"),
     revenue: formData.get("revenue") ?? undefined,
   });
-  if (!parsed.success || !isBusinessVerb(parsed.data.verb)) {
+  if (!parsed.success) {
     return { error: "That request could not be read. Reload and try again." };
   }
   const { opportunityId, verb, revenue } = parsed.data;

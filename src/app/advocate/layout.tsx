@@ -14,7 +14,9 @@ import { capitalize, TERMS } from "@/lib/terms";
  * are currently looking at.
  */
 const NAV: readonly NavItem[] = [
-  { href: "/advocate", label: capitalize(TERMS.quest.many) },
+  // The home now holds quests, balance, rewards within reach and history, so
+  // it is named for what it is rather than for one of those.
+  { href: "/advocate", label: "Dashboard" },
   { href: "/advocate/rewards", label: capitalize(TERMS.reward.many) },
 ];
 

@@ -6,25 +6,16 @@ import { prisma } from "@/server/db";
 import { requireIdentity } from "@/server/auth";
 import { ServiceError, advocateActor } from "@/server/context";
 import { transitionOpportunity } from "@/server/services/opportunities/transition-opportunity";
-
-/**
- * What an advocate can do to a request, and the status each means.
- *
- * A closed set rather than a status passed through from the form: the browser
- * naming its own target status would let an advocate try `REWARDED`. The state
- * machine would refuse it, but the narrower surface means there is nothing to
- * refuse.
- */
-const RESPONSES = {
-  accept: "ACCEPTED",
-  decline: "DECLINED",
-  complete: "COMPLETED",
-} as const;
+import {
+  ADVOCATE_VERBS,
+  isAdvocateVerb,
+  type AdvocateVerb,
+} from "@/server/services/opportunities/advocate-verbs";
 
 const schema = z.object({
   businessId: z.uuid(),
   opportunityId: z.uuid(),
-  response: z.enum(["accept", "decline", "complete"]),
+  response: z.custom<AdvocateVerb>((v) => typeof v === "string" && isAdvocateVerb(v)),
 });
 
 export type RespondState = { readonly error?: string };
@@ -64,7 +55,8 @@ export async function respondToQuest(
       { db: prisma, actor },
       {
         opportunityId: parsed.data.opportunityId,
-        to: RESPONSES[parsed.data.response],
+        // A closed set mapped on the server: see ADVOCATE_VERBS.
+        to: ADVOCATE_VERBS[parsed.data.response],
       },
     );
   } catch (error) {
