@@ -49,4 +49,21 @@ export const serverEnv = {
   get appUrl(): string {
     return process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
   },
+  /**
+   * Resend's API key. Optional here on purpose: without it, development logs
+   * emails to the console instead of sending them, and production refuses to
+   * send and records why — see `defaultTransport`.
+   */
+  get resendApiKey(): string | undefined {
+    return process.env.RESEND_API_KEY || undefined;
+  },
+  /**
+   * Who emails come from. Only the address is used; the display name is
+   * rewritten per business ("Acme via Dealio"). Resend's shared test sender
+   * delivers only to the account owner, which is right for local work and
+   * wrong anywhere else — set this once a domain is verified.
+   */
+  get emailFrom(): string {
+    return process.env.EMAIL_FROM || "Dealio <onboarding@resend.dev>";
+  },
 };

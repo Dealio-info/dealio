@@ -10,6 +10,7 @@ import {
   markRedemptionDelivered,
   rejectRedemption,
 } from "@/server/services/rewards/redemptions";
+import { emailAfterResponse } from "@/server/notify";
 
 export type DecisionState = { readonly error?: string; readonly ok?: boolean };
 
@@ -50,13 +51,16 @@ export async function decideRedemption(
     const ctx = { db: prisma, actor };
     if (decision === "approve") {
       await approveRedemption(ctx, { redemptionId });
+      emailAfterResponse(ctx, { kind: "REDEMPTION_APPROVED", redemptionId });
     } else if (decision === "reject") {
       await rejectRedemption(ctx, { redemptionId, reason: reason ?? null });
+      emailAfterResponse(ctx, { kind: "REDEMPTION_REJECTED", redemptionId });
     } else {
       await markRedemptionDelivered(ctx, {
         redemptionId,
         externalOrderId: externalOrderId ?? null,
       });
+      emailAfterResponse(ctx, { kind: "REDEMPTION_DELIVERED", redemptionId });
     }
   } catch (error) {
     // "Someone already decided this" and "the balance no longer covers it" are

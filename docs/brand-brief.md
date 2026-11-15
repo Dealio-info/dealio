@@ -68,6 +68,12 @@ names (`bg-primary`, `text-foreground`) rather than literal colours. So a palett
 an edit to one file, not a sweep through every component. The same is true of the currency name and
 the word for an opportunity, each of which lives in a single constant.
 
+Email is the one exception, and it is still a single file. Inboxes ignore stylesheets, so emails
+cannot use the app's colour roles; their colours and font live in
+`src/server/services/email/theme.ts` instead, kept to the same neutral greys until the palette
+arrives. A palette change is therefore two edits — `globals.css` and that file — and the email
+templates themselves never change.
+
 That is deliberate, and it is why "still deciding" is a workable answer. What does **not** survive
 late changes is structure — how a page is laid out, what a dashboard puts first — so those are
 being decided now, and reviewed with screenshots rather than described.

@@ -72,6 +72,11 @@ export default async function AdvocatesPage() {
                   <TableCell>
                     <div className="flex flex-col items-start gap-2">
                       <StatusBadge status={a.status} kind="advocate" />
+                      {a.emailOptedOut && (
+                        <span className="text-muted-foreground text-xs">
+                          Unsubscribed from email
+                        </span>
+                      )}
                       {a.status === "INVITED" && !a.hasClaimed && (
                         <ReissueButton email={a.email} />
                       )}

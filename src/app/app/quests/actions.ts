@@ -14,6 +14,7 @@ import {
   type BusinessVerb,
 } from "@/server/services/opportunities/business-verbs";
 import { parseDollarsToCents } from "@/lib/money";
+import { emailAfterResponse } from "@/server/notify";
 
 export type QuestFormState = { readonly error?: string; readonly ok?: boolean };
 
@@ -86,6 +87,7 @@ export async function createQuest(
   if (intent === "send") {
     try {
       await transitionOpportunity(ctx, { opportunityId: id, to: BUSINESS_VERBS.send });
+      emailAfterResponse(ctx, { kind: "QUEST_REQUESTED", opportunityId: id });
     } catch (error) {
       refresh();
       if (error instanceof ServiceError) {
@@ -137,14 +139,19 @@ export async function actOnQuest(
 
   const identity = await requireIdentity();
   try {
-    await transitionOpportunity(
-      { db: prisma, actor: soleBusinessActor(identity) },
-      {
-        opportunityId,
-        to: BUSINESS_VERBS[verb],
-        ...(influencedRevenueCents !== null && { influencedRevenueCents }),
-      },
-    );
+    const ctx = { db: prisma, actor: soleBusinessActor(identity) };
+    await transitionOpportunity(ctx, {
+      opportunityId,
+      to: BUSINESS_VERBS[verb],
+      ...(influencedRevenueCents !== null && { influencedRevenueCents }),
+    });
+    // The advocate hears about the two moves that concern them: being asked,
+    // and being paid. Verifying and cancelling are the business's own
+    // bookkeeping.
+    if (verb === "send")
+      emailAfterResponse(ctx, { kind: "QUEST_REQUESTED", opportunityId });
+    if (verb === "award")
+      emailAfterResponse(ctx, { kind: "QUEST_REWARDED", opportunityId });
   } catch (error) {
     if (error instanceof ServiceError) return { error: error.message };
     throw error;

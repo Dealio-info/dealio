@@ -134,6 +134,53 @@ and outcome handlers use deterministic event IDs so retries are safe.
 Next.js 16 + React 19 + TypeScript + Tailwind 4, shadcn/ui on Base UI, Vitest 5, ESLint 9 (flat
 config) with the database boundary, and Prisma 7 with the full domain schema migrated.
 
+**Through Task 14.** Transactional email through Resend: the invite, a quest sent, a quest paid,
+and a redemption approved, declined or sent. One module, `src/server/services/email/`, plus the
+unsubscribe page and endpoint.
+
+- **`sendEmail(ctx, request)` names a record, never a recipient.** The request is
+  `{ kind, opportunityId | redemptionId | token }`; the address is always the advocate's on that
+  record and the words are always the template's — the prototype's convention, kept so the email
+  path cannot send arbitrary mail to arbitrary people. Every lookup is scoped to
+  `actor.businessId`, and the event must actually have happened: a draft cannot be announced as
+  sent, nor an unpaid quest as paid.
+- **One email per event, enforced by the database.** `email_sends.idempotencyKey` is unique and
+  deterministic — `QUEST_REWARDED:<opportunityId>` — so a retry or a double-click finds the row and
+  stops; the same key goes to Resend as its `Idempotency-Key`. Only a `FAILED` row is retried, with a
+  compare-and-swap. A row left `SENDING` by a crashed process is never retried: possibly-not-sent is
+  the conservative failure, possibly-sent-twice is not.
+- **Delivery failures do not throw; refusals do.** By the time an email is sent the event is
+  committed, so an unreachable provider must not turn an approval into an error. The row records why.
+  A wrong business or an event that has not happened is a bug and throws.
+- **Notifications go out after the response** via `emailAfterResponse` in `src/server/notify.ts`,
+  which wraps Next's `after()`. Call it only after the service call that made the event happen. **The
+  invite is the exception**: sent before replying, so the admin sees whether to send the link by
+  hand.
+- **The invite token is never stored**, in `email_sends` or anywhere; a test checks the row does not
+  contain it. The invite is found by the token's hash, which is also how a token that is not this
+  business's live invite is refused.
+- **Unsubscribe is per advocate, per business**: `Advocate.emailUnsubscribeToken` (a database
+  default, so every row has one) and `emailOptedOutAt`, checked at send time and recorded as
+  `SKIPPED`. The footer links to `/unsubscribe/[token]`, which only previews on GET; the
+  `List-Unsubscribe` header points at `/api/email/unsubscribe/[token]`, which acts only on POST
+  (RFC 8058 one-click). Link scanners follow every URL in an email, so neither acts on GET.
+  `/app/advocates` shows who has unsubscribed.
+- **Templates are pure functions** of their data, snapshot-tested, with every interpolated value
+  escaped. HTML and text are built from the same blocks so they cannot disagree. Email colours live
+  in `email/theme.ts` — inboxes ignore stylesheets — so a palette change is that file plus
+  `globals.css`.
+- **No SDK.** `resendTransport` calls Resend's one endpoint with `fetch`; its test checks the exact
+  request. Without `RESEND_API_KEY`, development logs emails to the console and production records
+  each as `FAILED` with the reason. `From` is "`<Business> via Dealio` <address from `EMAIL_FROM`>",
+  with the business name stripped of anything that could break the header.
+- **Snapshots contain the current currency name.** Renaming it in `currency.ts` changes the
+  rendered emails, so `npx vitest -u` the email snapshots in the same change — that diff is the
+  review of what advocates will read.
+- **Stopping a local `next start`: kill the `next-server` process, not the `npx` wrapper.** Killing
+  the wrapper's PID leaves the server holding the port, the next `next start` dies with
+  `EADDRINUSE`, and the old build keeps answering — every new route 404s and nothing says why. Check
+  the log for `EADDRINUSE` when a fresh route is missing.
+
 **Through Task 13.** The advocate's home at `/advocate` is a dashboard: what needs them, their
 balance (with what is free and what is held for a claim), lifetime earnings, rewards within reach
 with Claim buttons, open claims, and a history of currency in and out — per business, never merged.
