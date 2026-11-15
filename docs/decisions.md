@@ -304,6 +304,13 @@ is the problem.
 
 ## Log
 
+**2026-11-15 — The root URL, after the first deploy.**
+The deployed site's front page was still the Task 1 scaffold, and signing in without a destination
+lands there. `/` now sends a signed-in person to their own side — the business side if they are staff
+anywhere, otherwise the advocate side — and shows everyone else a plain landing page in the README's
+words. **Open for the business lead:** the headline, positioning and any call to action for
+prospective customers (there is no "book a demo" address to point at yet).
+
 **2026-11-15 — Task 14: transactional email via Resend.**
 Advocates are emailed when they are invited, when a quest is sent to them, when one is paid, and when
 a reward they claimed is approved, declined or sent. Six templates, one send path, a log of every
