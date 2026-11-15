@@ -135,6 +135,7 @@ export default async function AppHome() {
         <h2 className="text-sm font-medium">What it has been worth</h2>
         <div className="bg-card grid gap-6 rounded-lg border p-5 sm:grid-cols-2 lg:grid-cols-4">
           <Stat
+            emphasis
             label="Influenced revenue"
             value={formatCents(summary.influencedRevenueCents)}
             hint={`Recorded when ${TERMS.quest.many} were verified`}

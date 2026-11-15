@@ -6,6 +6,7 @@ import { currentIdentity } from "@/server/auth";
 import { previewInvite } from "@/server/services/advocates/preview-invite";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { EntryFrame } from "@/components/brand/entry-frame";
 import { TERMS } from "@/lib/terms";
 import { CURRENCY } from "@/lib/currency";
 import { AcceptForm } from "./accept-form";
@@ -44,8 +45,8 @@ export default async function InvitePage({
   if (preview?.state === "yours") redirect("/advocate");
 
   return (
-    <main className="mx-auto flex min-h-svh max-w-md flex-col justify-center px-4 py-16">
-      <Card>
+    <EntryFrame>
+      <Card className="shadow-glow">
         {!preview ? (
           <Message
             title="This link is not valid"
@@ -108,7 +109,7 @@ export default async function InvitePage({
           </>
         )}
       </Card>
-    </main>
+    </EntryFrame>
   );
 }
 

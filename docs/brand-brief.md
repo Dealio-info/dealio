@@ -10,10 +10,16 @@ if nobody makes it on purpose.
 
 ## Where things stand
 
-The app currently uses shadcn/ui's `neutral` default palette, which is pure greyscale — there is no
-colour in the interface at all. Three brand colours were sketched from the product brief (deep navy
-`#0b1220`, vibrant green `#16c172`, off-white `#f7f7f5`) and are defined in one file, but nothing
-uses them, because they were never confirmed.
+**The app now uses the prototype's brand**, carried over on 2026-11-15: deep navy, lime and teal from
+the two-chevron logo, gold as a sparing accent, with the prototype's lime-to-teal gradient, glow and
+card depth. The logo itself is the prototype's mark, redrawn inline. Dark mode is the prototype's
+navy; light mode keeps the same brand with darker greens and teals wherever colour carries text.
+
+That makes this brief a review rather than a blank page. Everything below can still change, and
+changing it is still one file — `src/app/globals.css`, plus `src/server/services/email/theme.ts` for
+email. What has changed is that the colours are now **tested**: `theme-contrast.test.ts` reads the
+theme and fails, naming the pair and its ratio, if any text drops below WCAG AA (4.5:1) or a focus
+ring or form border below 3:1, in either theme. A new palette has to pass it, which is the point.
 
 ## 1. Palette
 

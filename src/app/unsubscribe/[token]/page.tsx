@@ -3,6 +3,7 @@ import { prisma } from "@/server/db";
 import { getEmailPreference } from "@/server/services/email/unsubscribe";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { EntryFrame } from "@/components/brand/entry-frame";
 import { TERMS } from "@/lib/terms";
 import { changeEmailPreference } from "./actions";
 
@@ -28,8 +29,8 @@ export default async function UnsubscribePage({
   const preference = await getEmailPreference(prisma, token);
 
   return (
-    <main className="mx-auto flex min-h-svh max-w-md flex-col justify-center px-4 py-16">
-      <Card>
+    <EntryFrame>
+      <Card className="shadow-glow">
         {!preference ? (
           <>
             <CardHeader>
@@ -73,6 +74,6 @@ export default async function UnsubscribePage({
           </>
         )}
       </Card>
-    </main>
+    </EntryFrame>
   );
 }

@@ -94,7 +94,7 @@ function layout(
       case "quote":
         return `<p style="margin:0 0 16px;padding:12px 16px;border-left:3px solid ${T.border};color:${T.text};font-size:15px;line-height:1.5;white-space:pre-wrap">${escapeHtml(b.text)}</p>`;
       case "button":
-        return `<p style="margin:24px 0"><a href="${escapeHtml(b.url)}" style="display:inline-block;padding:12px 20px;border-radius:6px;background:${T.buttonBackground};color:${T.buttonText};font-size:15px;font-weight:600;text-decoration:none">${escapeHtml(b.label)}</a></p>`;
+        return `<p style="margin:24px 0"><a href="${escapeHtml(b.url)}" style="display:inline-block;padding:12px 22px;border-radius:8px;background:${T.buttonBackground};color:${T.buttonText};font-size:15px;font-weight:600;text-decoration:none">${escapeHtml(b.label)}</a></p>`;
     }
   };
   const textBlock = (b: Block): string =>
@@ -110,8 +110,10 @@ function layout(
 <body style="margin:0;padding:0;background:${T.background};font-family:${T.font}">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${T.background}">
 <tr><td align="center" style="padding:32px 16px">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:${T.surface};border:1px solid ${T.border};border-radius:8px">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:${T.surface};border:1px solid ${T.border};border-radius:8px;border-collapse:separate">
+<tr><td style="height:4px;line-height:4px;font-size:0;border-radius:8px 8px 0 0;background-color:${T.accentFrom};background-image:linear-gradient(90deg,${T.accentFrom},${T.accentTo})">&nbsp;</td></tr>
 <tr><td style="padding:32px">
+<p style="margin:0 0 24px;color:${T.text};font-size:18px;font-weight:700;letter-spacing:-0.01em">Dealio</p>
 <h1 style="margin:0 0 24px;color:${T.text};font-size:22px;line-height:1.3">${escapeHtml(heading)}</h1>
 <p style="margin:0 0 16px;color:${T.text};font-size:16px;line-height:1.5">${escapeHtml(greeting)}</p>
 ${blocks.map(htmlBlock).join("\n")}
