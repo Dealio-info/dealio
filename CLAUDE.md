@@ -134,6 +134,13 @@ and outcome handlers use deterministic event IDs so retries are safe.
 Next.js 16 + React 19 + TypeScript + Tailwind 4, shadcn/ui on Base UI, Vitest 5, ESLint 9 (flat
 config) with the database boundary, and Prisma 7 with the full domain schema migrated.
 
+**The root URL (`/`)** was the Task 1 scaffold until after the first Vercel deploy. It is now a
+doorway: a signed-in person is redirected by `homeFor` in `src/lib/home.ts` — `/app` if they are
+staff anywhere, else `/advocate`, else nothing — and everyone else gets a plain landing page. This
+matters more than it looks: **signing in without a `next` lands on `/`**, so before this a real
+admin finished signing in on a placeholder. The landing copy is the README's, built from `TERMS` and
+`CURRENCY` and the role tokens, because positioning and slogan are still with the business lead.
+
 **Through Task 14.** Transactional email through Resend: the invite, a quest sent, a quest paid,
 and a redemption approved, declined or sent. One module, `src/server/services/email/`, plus the
 unsubscribe page and endpoint.
