@@ -49,3 +49,28 @@ describe("serverEnv", () => {
     expect(serverEnv.appUrl).toBe("https://dealio.info");
   });
 });
+
+describe("serverEnv.appUrl", () => {
+  it("drops trailing slashes, since every caller appends a path", () => {
+    // `${appUrl}/invite/…` with "https://dealio.info/" would build
+    // "https://dealio.info//invite/…".
+    vi.stubEnv("NEXT_PUBLIC_APP_URL", "https://dealio.info/");
+    expect(serverEnv.appUrl).toBe("https://dealio.info");
+    vi.stubEnv("NEXT_PUBLIC_APP_URL", "https://dealio.info///");
+    expect(serverEnv.appUrl).toBe("https://dealio.info");
+  });
+
+  it("leaves a clean value alone, and trims stray whitespace", () => {
+    vi.stubEnv("NEXT_PUBLIC_APP_URL", "https://dealio.info");
+    expect(serverEnv.appUrl).toBe("https://dealio.info");
+    vi.stubEnv("NEXT_PUBLIC_APP_URL", "  https://dealio.info/ \n");
+    expect(serverEnv.appUrl).toBe("https://dealio.info");
+  });
+
+  it("falls back to localhost when unset or blank", () => {
+    vi.stubEnv("NEXT_PUBLIC_APP_URL", "");
+    expect(serverEnv.appUrl).toBe("http://localhost:3000");
+    vi.stubEnv("NEXT_PUBLIC_APP_URL", "  ");
+    expect(serverEnv.appUrl).toBe("http://localhost:3000");
+  });
+});

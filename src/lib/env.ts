@@ -45,9 +45,17 @@ export const serverEnv = {
   get supabaseSecretKey(): string {
     return required(process.env.SUPABASE_SECRET_KEY, "SUPABASE_SECRET_KEY");
   },
-  /** Used to build invite and magic links. */
+  /**
+   * The public origin, used to build every link that leaves the app — invite
+   * links, email buttons, unsubscribe links — and the sign-out redirect.
+   *
+   * Normalised because every caller appends a path: a trailing slash pasted
+   * into Vercel ("https://dealio.info/") would otherwise produce
+   * "https://dealio.info//invite/…", and a stray space would break every link.
+   */
   get appUrl(): string {
-    return process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const value = (process.env.NEXT_PUBLIC_APP_URL ?? "").trim().replace(/\/+$/, "");
+    return value || "http://localhost:3000";
   },
   /**
    * Resend's API key. Optional here on purpose: without it, development logs
