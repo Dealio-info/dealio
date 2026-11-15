@@ -304,6 +304,22 @@ is the problem.
 
 ## Log
 
+**2026-11-15 — Vercel environment: the app's own names, not the Supabase integration's.**
+Installing the Vercel Supabase integration added 13 variables beside the 11 set by hand. The app
+reads none of them: the integration provides no `NEXT_PUBLIC_` Supabase URL (the browser needs one),
+and its keys are the legacy `anon` / `service_role` JWTs this app replaced with publishable and
+secret keys in Task 4. Switching the code to its names would have meant going back to the legacy
+keys and still keeping a hand-set URL — two sources for one setting, which is the confusion this
+avoids.
+
+**Decided: the names in `.env.example` are the only ones the app reads**, with no fallbacks to the
+integration's names, so there is exactly one place each value comes from. The integration's
+variables are unused; whether to keep the integration at all is a project-settings choice, not a code
+one. `SUPABASE_JWT_SECRET` in particular should not sit in an environment that does not need it —
+it can sign a token for any user.
+
+Also: `NEXT_PUBLIC_APP_URL` now has any trailing slash stripped, since every caller appends a path.
+
 **2026-11-15 — The prototype's look, carried over and tested.**
 The MVP was built theme-neutral so the palette could land in one file. It has: navy, lime, teal and
 gold from the prototype's logo, its gradients, glow and depth, and the logo itself. Asked for by the
