@@ -8,6 +8,12 @@ import {
 export type OpportunitySummary = {
   readonly id: string;
   readonly advocateId: string;
+  /**
+   * Who drafted it. Needed by the business side to work out what a rep may do
+   * to their own quest; harmless for an advocate to receive, since it is an
+   * opaque id and they are never shown it.
+   */
+  readonly createdByUserId: string;
   readonly type: OpportunityType;
   readonly status: OpportunityStatus;
   readonly title: string;
@@ -46,6 +52,7 @@ export async function listOpportunities(
     select: {
       id: true,
       advocateId: true,
+      createdByUserId: true,
       type: true,
       status: true,
       title: true,

@@ -3,7 +3,7 @@ import { StatusBadge } from "./status-badge";
 import { CurrencyAmount } from "./currency-amount";
 
 /**
- * One request, as the advocate sees it.
+ * One request, for either audience.
  *
  * Presentational, with `actions` passed in — the real page passes a form bound
  * to a server action, the style guide passes plain buttons. Shared so the two
@@ -21,6 +21,7 @@ export function QuestCard({
   rewardAmount,
   actions,
   quiet,
+  audience = "advocate",
 }: {
   title: string;
   subtitle?: string | undefined;
@@ -29,6 +30,8 @@ export function QuestCard({
   actions?: React.ReactNode;
   /** Done and dusted: present, but not competing for attention. */
   quiet?: boolean;
+  /** Whose words the status is in — a rep's "Sent" is an advocate's "New". */
+  audience?: "business" | "advocate";
 }) {
   return (
     <Card className={quiet ? "bg-transparent" : undefined}>
@@ -38,7 +41,7 @@ export function QuestCard({
           {subtitle && <p className="text-muted-foreground text-sm">{subtitle}</p>}
         </div>
         <div className="flex shrink-0 items-center gap-3">
-          <StatusBadge status={status} audience="advocate" />
+          <StatusBadge status={status} audience={audience} />
           <CurrencyAmount amount={rewardAmount} />
         </div>
       </CardHeader>

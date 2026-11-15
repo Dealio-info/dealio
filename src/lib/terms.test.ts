@@ -139,3 +139,12 @@ describe("redemption statuses", () => {
     expect(statusRole("WAT", "redemption")).toBe("waiting");
   });
 });
+
+describe("advocate statuses", () => {
+  it("covers every value in the schema", () => {
+    for (const s of ["INVITED", "ACTIVE", "INACTIVE"]) {
+      expect(statusLabel(s, "business", "advocate"), s).not.toBe(s);
+    }
+    expect(statusRole("ACTIVE", "advocate")).toBe("success");
+  });
+});

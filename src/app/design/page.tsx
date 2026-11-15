@@ -342,6 +342,48 @@ export default function DesignPage() {
       </Section>
 
       <Section
+        title="A quest, as the business sees it"
+        description="The same card, in the business's words: “Marked done” rather than “Awaiting review”. Only the moves this person may make are offered — derived from the state machine, so a button never appears that the server would refuse."
+      >
+        <div className="space-y-3">
+          <QuestCard
+            audience="business"
+            title="Reference call with Globex's CTO"
+            subtitle="Reference call · Dana Whitfield · Globex"
+            status="COMPLETED"
+            rewardAmount={30}
+            actions={
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm">Verify</Button>
+                <Button size="sm" variant="ghost">
+                  Cancel
+                </Button>
+              </div>
+            }
+          />
+          <QuestCard
+            audience="business"
+            title="Case study for the website"
+            subtitle="Case study · Jordan Reyes · $48,200 influenced"
+            status="REWARDED"
+            rewardAmount={50}
+            quiet
+          />
+        </div>
+      </Section>
+
+      <Section
+        title="Advocate statuses"
+        description="Staff-only: where each advocate stands with the business."
+      >
+        <div className="flex flex-wrap gap-1.5">
+          {["INVITED", "ACTIVE", "INACTIVE"].map((s) => (
+            <StatusBadge key={s} status={s} kind="advocate" />
+          ))}
+        </div>
+      </Section>
+
+      <Section
         title="A reward, as the advocate sees it"
         description="The gap is stated, not just the price. “Four more and this is yours” is a reason to do another quest; a greyed-out card is only a refusal."
       >

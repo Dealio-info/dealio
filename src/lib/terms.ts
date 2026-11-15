@@ -53,6 +53,25 @@ export function capitalize(text: string): string {
 }
 
 /**
+ * The kinds of quest, as a person reads them. Keyed by `OpportunityType`.
+ * `hint` is what the business is actually asking the advocate to do.
+ */
+export const QUEST_TYPE: Record<
+  string,
+  { readonly label: string; readonly hint: string }
+> = {
+  EMAIL_INTRO: { label: "Intro", hint: "Introduce us to someone by email" },
+  REFERENCE_CALL: { label: "Reference call", hint: "Take a call with a prospect" },
+  CASE_STUDY: { label: "Case study", hint: "Help us write up your story" },
+  TESTIMONIAL: { label: "Testimonial", hint: "A quote or review in your words" },
+  PRODUCT_DEMO: { label: "Product demo", hint: "Show a prospect how you use it" },
+};
+
+export function questTypeLabel(type: string): string {
+  return QUEST_TYPE[type]?.label ?? type;
+}
+
+/**
  * What each lifecycle status is called, and which colour role it carries.
  *
  * The domain names are blunt enum values; these are what a person reads, so
@@ -105,9 +124,20 @@ export const REDEMPTION_STATUS: Record<
   FAILED: { label: "Failed", role: "failed" },
 };
 
+/** Where an advocate stands with a business. Only staff ever see these. */
+export const ADVOCATE_STATUS: Record<
+  string,
+  { readonly label: string; readonly advocate?: string; readonly role: StatusRole }
+> = {
+  INVITED: { label: "Invited", role: "waiting" },
+  ACTIVE: { label: "Active", role: "success" },
+  INACTIVE: { label: "Inactive", role: "failed" },
+};
+
 const STATUS_MAPS = {
   quest: OPPORTUNITY_STATUS,
   redemption: REDEMPTION_STATUS,
+  advocate: ADVOCATE_STATUS,
 } as const;
 
 /** Which lifecycle a status belongs to. They have overlapping value names. */

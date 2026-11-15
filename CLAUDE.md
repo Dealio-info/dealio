@@ -134,6 +134,40 @@ and outcome handlers use deterministic event IDs so retries are safe.
 Next.js 16 + React 19 + TypeScript + Tailwind 4, shadcn/ui on Base UI, Vitest 5, ESLint 9 (flat
 config) with the database boundary, and Prisma 7 with the full domain schema migrated.
 
+**Through Task 12.5** (added to the plan 2026-11-13). The business side can now drive the whole loop
+in the browser: `/app/advocates` invites and lists, `/app/quests` creates and moves quests, and
+`/invite/[token]` is where an invited advocate claims. Before this, Tasks 6 and 7 had services but no
+pages, and **nothing in the app called `claimInvite` at all**.
+
+- **An invite link previews on GET and claims only on POST.** Mail scanners, link checkers and
+  prefetch follow links on their own, and the token is single-use; a page that claimed on GET would
+  hand the invite to whichever bot looked first. `previewInvite` reads only, mirrors
+  `claimInvite`'s checks in the same order, and a test pins that what previews as `open` claims and
+  what previews as anything else is refused. The page sets `referrer: no-referrer` and `noindex`.
+- **The invite link is shown once.** Only its hash is stored, so the action's response is the only
+  place the working URL exists. "New link" on an unclaimed advocate re-invites, which expires the old
+  one. Email delivery is Task 14; until then the admin sends the link. Links use
+  `serverEnv.appUrl`, i.e. `NEXT_PUBLIC_APP_URL`, which falls back to `http://localhost:3000`.
+- **Quest moves are a closed verb set** — `send | verify | award | cancel` in
+  `opportunities/business-verbs.ts` — mapped to statuses on the server, like the advocate side's
+  `accept | decline | complete`. **Which buttons appear is `availableVerbs`, derived from
+  `canTransition`**, so the page cannot offer a move the service would refuse; its test has a
+  hand-written case table for both policies plus a sweep against `canTransition`.
+- **Revenue is typed in dollars and stored in cents** via `parseDollarsToCents`, which never uses a
+  float and refuses what it cannot represent exactly — a third decimal place, a negative, an
+  exponent — rather than rounding a number someone will quote. Blank means "not recorded", not zero.
+- **Creating a quest is a draft, then a send.** The form's "Send" does both; if the policy refuses the
+  send, the draft stands and the message says it is waiting for approval.
+- **shadcn `Select` submits through a hidden input when given `name`**, and
+  `src/components/ui/select-form.test.tsx` pins it — a select that silently submitted nothing would
+  surface only as a confusing validation error. Pass `items` too, or `SelectValue` shows the raw enum.
+- **Close a panel on success from inside the `useActionState` callback**, not from an effect watching
+  the result; `react-hooks/set-state-in-effect` rejects the latter.
+- **`full-loop.integration.test.ts`** walks the plan's end-to-end path through the services in the
+  order the pages drive it — invite, preview, claim, send, accept, complete, verify with revenue,
+  award, redeem — and checks the dashboard at the end. It is the cheapest stand-in for clicking
+  through, and it runs on every push.
+
 **Through Task 12.** The business dashboard at `/app` and the approval-policy form at
 `/app/settings`, over a new `analytics` module (`getDashboardSummary`, `listAdvocateBalances`) and
 `tenancy/getBusinessProfile`.
