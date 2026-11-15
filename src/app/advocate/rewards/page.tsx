@@ -1,24 +1,24 @@
 import { requireIdentity } from "@/server/auth";
 import { prisma } from "@/server/db";
 import { advocateActor } from "@/server/context";
-import { listRewards } from "@/server/services/rewards/catalog";
-import { getBusinessProfile } from "@/server/services/tenancy/business-profile";
-import { getBalance } from "@/server/services/rewards/balance";
-import {
-  getAvailableBalance,
-  listRedemptions,
-} from "@/server/services/rewards/redemptions";
+import { getAdvocateDashboard } from "@/server/services/advocates/advocate-dashboard";
 import { PageHeader } from "@/components/app/page-header";
 import { EmptyState } from "@/components/app/empty-state";
 import { CurrencyAmount } from "@/components/app/currency-amount";
 import { RewardCard } from "@/components/app/reward-card";
 import { RedemptionRow } from "@/components/app/redemption-row";
-import { ClaimButton } from "./claim-button";
 import { TERMS } from "@/lib/terms";
 import { CURRENCY } from "@/lib/currency";
+import { ClaimButton } from "./claim-button";
 
 export const metadata = { title: "Rewards · Dealio" };
 
+/**
+ * The full catalog and claim history, per business.
+ *
+ * Reads the same `getAdvocateDashboard` as the home page, so the two cannot
+ * disagree about a balance or what is free to spend.
+ */
 export default async function AdvocateRewardsPage() {
   const identity = await requireIdentity();
 
@@ -31,28 +31,13 @@ export default async function AdvocateRewardsPage() {
     );
   }
 
-  // One catalog per business, like the quests. Each company funds its own
-  // rewards, and a balance earned at one cannot be spent at another.
   const catalogs = await Promise.all(
-    identity.advocates.map(async (profile) => {
-      const actor = advocateActor(identity, profile.businessId);
-      const ctx = { db: prisma, actor };
-      const [business, rewards, balance, available, redemptions] = await Promise.all([
-        getBusinessProfile(ctx),
-        listRewards(ctx),
-        getBalance(ctx, { advocateId: profile.advocateId }),
-        getAvailableBalance(ctx, { advocateId: profile.advocateId }),
-        listRedemptions(ctx),
-      ]);
-      return {
-        businessId: profile.businessId,
-        name: business.name,
-        rewards,
-        balance,
-        available,
-        redemptions,
-      };
-    }),
+    identity.advocates.map((profile) =>
+      getAdvocateDashboard({
+        db: prisma,
+        actor: advocateActor(identity, profile.businessId),
+      }),
+    ),
   );
 
   return (
@@ -60,7 +45,7 @@ export default async function AdvocateRewardsPage() {
       {catalogs.map((catalog) => (
         <section key={catalog.businessId} className="space-y-6">
           <PageHeader
-            title={`${catalog.name} ${TERMS.reward.many}`}
+            title={`${catalog.businessName} ${TERMS.reward.many}`}
             description={`What you can claim with the ${CURRENCY.many} you have earned.`}
             action={
               <div className="text-right">
@@ -79,7 +64,7 @@ export default async function AdvocateRewardsPage() {
           {catalog.rewards.length === 0 ? (
             <EmptyState
               title={`No ${TERMS.reward.many} yet`}
-              description={`${catalog.name} has not added anything to claim. Your balance keeps until they do.`}
+              description={`${catalog.businessName} has not added anything to claim. Your balance keeps until they do.`}
             />
           ) : (
             <div className="grid gap-3 sm:grid-cols-2">
@@ -89,15 +74,13 @@ export default async function AdvocateRewardsPage() {
                   name={reward.name}
                   description={reward.description}
                   cost={reward.cost}
-                  balance={catalog.balance}
+                  // The gap shown is against what is free, matching the
+                  // button: currency held for a pending claim is not spendable.
+                  balance={catalog.available}
                   action={
                     <ClaimButton
                       businessId={catalog.businessId}
                       rewardId={reward.id}
-                      // Measured against what is *free*, not the headline
-                      // balance: currency already committed to a pending
-                      // request cannot be spent twice, and the server would
-                      // refuse it anyway.
                       affordable={catalog.available >= reward.cost}
                     />
                   }
