@@ -10,6 +10,8 @@ export type AdvocateSummary = {
   readonly status: AdvocateStatus;
   /** False while the invite is outstanding. */
   readonly hasClaimed: boolean;
+  /** They used an unsubscribe link: this business's emails do not reach them. */
+  readonly emailOptedOut: boolean;
   readonly createdAt: Date;
   readonly lastActiveAt: Date | null;
 };
@@ -43,12 +45,14 @@ export async function listAdvocates(
       userId: true,
       createdAt: true,
       lastActiveAt: true,
+      emailOptedOutAt: true,
     },
     orderBy: [{ createdAt: "desc" }],
   });
 
-  return advocates.map(({ userId, ...rest }) => ({
+  return advocates.map(({ userId, emailOptedOutAt, ...rest }) => ({
     ...rest,
     hasClaimed: userId !== null,
+    emailOptedOut: emailOptedOutAt !== null,
   }));
 }

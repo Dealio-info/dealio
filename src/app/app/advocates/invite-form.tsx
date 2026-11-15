@@ -117,8 +117,13 @@ export function InviteLink({
         {invitation.reinvited ? "New link" : "Invite link"} for {invitation.email}
       </p>
       <p className="text-muted-foreground text-sm">
-        Send this to them yourself. It works once, expires on{" "}
-        {new Date(invitation.expiresAt).toLocaleDateString()}, and{" "}
+        {invitation.emailed === "sent"
+          ? "Emailed to them. "
+          : invitation.emailed === "skipped"
+            ? "Not emailed — they have unsubscribed from your emails, so send it yourself. "
+            : "The email did not go through, so send it yourself. "}
+        It works once, expires on {new Date(invitation.expiresAt).toLocaleDateString()},
+        and{" "}
         <strong className="text-foreground font-medium">will not be shown again</strong>
         {invitation.reinvited && " — any earlier link for them has stopped working"}.
       </p>

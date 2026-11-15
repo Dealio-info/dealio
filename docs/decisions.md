@@ -304,6 +304,35 @@ is the problem.
 
 ## Log
 
+**2026-11-15 — Task 14: transactional email via Resend.**
+Advocates are emailed when they are invited, when a quest is sent to them, when one is paid, and when
+a reward they claimed is approved, declined or sent. Six templates, one send path, a log of every
+email in `email_sends`, and per-business unsubscribe.
+
+Decisions:
+
+- **Advocate-facing only, for now.** Nothing emails the business side yet. The obvious next one is
+  telling admins when a redemption is waiting — it is the only step that needs them to act and that
+  they cannot see without opening the app. Small to add on this module, but not in the plan.
+- **The business leads in `From`**: "Acme via Dealio". Advocates know the company, not us; "via
+  Dealio" is honest about the sender and keeps the address on our verified domain.
+- **One email per event, forever** — the idempotency key is the event, not the attempt — and a
+  failed send is retried only by another trigger for the same event. There is no background retry
+  yet; failures are visible in `email_sends` with the reason.
+- **No email for verifying or cancelling a quest.** Those are the business's bookkeeping. The
+  advocate hears about being asked and being paid.
+- **Unsubscribe covers every email from that business, including invites**, and the admin is told
+  when an invite was not emailed for that reason. Unsubscribing from one company does not touch
+  another.
+- **A staff decline reason is shown to the advocate**, since the decline form already says it is
+  written for them. (Contrast: staff ledger notes are never shown.)
+- **No bounce or complaint handling yet.** Resend can report them by webhook; handling those, with
+  deterministic event ids so retries are safe, is the prototype's other email convention and the
+  natural next step once real mail is flowing.
+
+**Open — sending domain.** The connected Resend account has no domains. Until `dealio.info` is added
+and verified, mail can only go from Resend's shared test sender to the account owner.
+
 **2026-11-15 — Task 13: the advocate dashboard.**
 `/advocate` now shows, per business: what needs the advocate, their balance with what is free and
 what is held for a claim, lifetime earnings, rewards within reach, open claims, and recent currency

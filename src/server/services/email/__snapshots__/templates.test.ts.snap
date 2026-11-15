@@ -1,0 +1,252 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`renderEmail > renders ADVOCATE_INVITE > html 1`] = `
+"<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Acme invited you to be an advocate</title></head>
+<body style="margin:0;padding:0;background:#f6f6f6;font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f6f6f6">
+<tr><td align="center" style="padding:32px 16px">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border:1px solid #e5e5e5;border-radius:8px">
+<tr><td style="padding:32px">
+<h1 style="margin:0 0 24px;color:#111111;font-size:22px;line-height:1.3">Acme invited you to be an advocate</h1>
+<p style="margin:0 0 16px;color:#111111;font-size:16px;line-height:1.5">Hi Dana,</p>
+<p style="margin:0 0 16px;color:#111111;font-size:16px;line-height:1.5">Acme would like you to be one of their advocates. You will see the quests they ask of you — a referral, a reference call, a testimonial — earn coins for the ones you complete, and spend them on rewards they offer.</p>
+<p style="margin:24px 0"><a href="https://dealio.info/invite/abc123" style="display:inline-block;padding:12px 20px;border-radius:6px;background:#111111;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none">Accept invitation</a></p>
+<p style="margin:0 0 16px;color:#6b6b6b;font-size:14px;line-height:1.5">This link works once and expires on Sun, 29 Nov 2026. If you were not expecting it, you can ignore this email.</p>
+</td></tr>
+</table>
+<p style="max-width:560px;margin:16px auto 0;color:#6b6b6b;font-size:12px;line-height:1.5">You are getting this because Acme invited you to be an advocate on Dealio. <a href="https://dealio.info/unsubscribe/7c1b3e2a-0000-4000-8000-000000000000" style="color:#6b6b6b">Unsubscribe from Acme emails</a>.</p>
+</td></tr>
+</table>
+</body>
+</html>
+"
+`;
+
+exports[`renderEmail > renders ADVOCATE_INVITE > subject 1`] = `"Acme invited you to be an advocate"`;
+
+exports[`renderEmail > renders ADVOCATE_INVITE > text 1`] = `
+"Acme invited you to be an advocate
+
+Hi Dana,
+
+Acme would like you to be one of their advocates. You will see the quests they ask of you — a referral, a reference call, a testimonial — earn coins for the ones you complete, and spend them on rewards they offer.
+
+Accept invitation: https://dealio.info/invite/abc123
+
+This link works once and expires on Sun, 29 Nov 2026. If you were not expecting it, you can ignore this email.
+
+--
+You are getting this because Acme invited you to be an advocate on Dealio.
+Unsubscribe from Acme emails: https://dealio.info/unsubscribe/7c1b3e2a-0000-4000-8000-000000000000
+"
+`;
+
+exports[`renderEmail > renders QUEST_REQUESTED > html 1`] = `
+"<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Acme asked you for a reference call</title></head>
+<body style="margin:0;padding:0;background:#f6f6f6;font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f6f6f6">
+<tr><td align="center" style="padding:32px 16px">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border:1px solid #e5e5e5;border-radius:8px">
+<tr><td style="padding:32px">
+<h1 style="margin:0 0 24px;color:#111111;font-size:22px;line-height:1.3">Reference call with Globex</h1>
+<p style="margin:0 0 16px;color:#111111;font-size:16px;line-height:1.5">Hi Dana,</p>
+<p style="margin:0 0 16px;color:#111111;font-size:16px;line-height:1.5">Acme has a new quest for you. It is worth 30 coins once it is done and verified.</p>
+<p style="margin:0 0 16px;padding:12px 16px;border-left:3px solid #e5e5e5;color:#111111;font-size:15px;line-height:1.5;white-space:pre-wrap">30 minutes next week.
+They want to hear about rollout.</p>
+<p style="margin:24px 0"><a href="https://dealio.info/advocate" style="display:inline-block;padding:12px 20px;border-radius:6px;background:#111111;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none">See the quest</a></p>
+</td></tr>
+</table>
+<p style="max-width:560px;margin:16px auto 0;color:#6b6b6b;font-size:12px;line-height:1.5">You are getting this because Acme invited you to be an advocate on Dealio. <a href="https://dealio.info/unsubscribe/7c1b3e2a-0000-4000-8000-000000000000" style="color:#6b6b6b">Unsubscribe from Acme emails</a>.</p>
+</td></tr>
+</table>
+</body>
+</html>
+"
+`;
+
+exports[`renderEmail > renders QUEST_REQUESTED > subject 1`] = `"Acme asked you for a reference call"`;
+
+exports[`renderEmail > renders QUEST_REQUESTED > text 1`] = `
+"Reference call with Globex
+
+Hi Dana,
+
+Acme has a new quest for you. It is worth 30 coins once it is done and verified.
+
+> 30 minutes next week.
+They want to hear about rollout.
+
+See the quest: https://dealio.info/advocate
+
+--
+You are getting this because Acme invited you to be an advocate on Dealio.
+Unsubscribe from Acme emails: https://dealio.info/unsubscribe/7c1b3e2a-0000-4000-8000-000000000000
+"
+`;
+
+exports[`renderEmail > renders QUEST_REWARDED > html 1`] = `
+"<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>You earned 30 coins from Acme</title></head>
+<body style="margin:0;padding:0;background:#f6f6f6;font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f6f6f6">
+<tr><td align="center" style="padding:32px 16px">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border:1px solid #e5e5e5;border-radius:8px">
+<tr><td style="padding:32px">
+<h1 style="margin:0 0 24px;color:#111111;font-size:22px;line-height:1.3">You earned 30 coins from Acme</h1>
+<p style="margin:0 0 16px;color:#111111;font-size:16px;line-height:1.5">Hi Dana,</p>
+<p style="margin:0 0 16px;color:#111111;font-size:16px;line-height:1.5">Acme verified “Reference call with Globex” and paid you 30 coins. Your balance with them is now 45 coins.</p>
+<p style="margin:24px 0"><a href="https://dealio.info/advocate/rewards" style="display:inline-block;padding:12px 20px;border-radius:6px;background:#111111;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none">Spend your coins</a></p>
+</td></tr>
+</table>
+<p style="max-width:560px;margin:16px auto 0;color:#6b6b6b;font-size:12px;line-height:1.5">You are getting this because Acme invited you to be an advocate on Dealio. <a href="https://dealio.info/unsubscribe/7c1b3e2a-0000-4000-8000-000000000000" style="color:#6b6b6b">Unsubscribe from Acme emails</a>.</p>
+</td></tr>
+</table>
+</body>
+</html>
+"
+`;
+
+exports[`renderEmail > renders QUEST_REWARDED > subject 1`] = `"You earned 30 coins from Acme"`;
+
+exports[`renderEmail > renders QUEST_REWARDED > text 1`] = `
+"You earned 30 coins from Acme
+
+Hi Dana,
+
+Acme verified “Reference call with Globex” and paid you 30 coins. Your balance with them is now 45 coins.
+
+Spend your coins: https://dealio.info/advocate/rewards
+
+--
+You are getting this because Acme invited you to be an advocate on Dealio.
+Unsubscribe from Acme emails: https://dealio.info/unsubscribe/7c1b3e2a-0000-4000-8000-000000000000
+"
+`;
+
+exports[`renderEmail > renders REDEMPTION_APPROVED > html 1`] = `
+"<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Acme approved your Coffee card</title></head>
+<body style="margin:0;padding:0;background:#f6f6f6;font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f6f6f6">
+<tr><td align="center" style="padding:32px 16px">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border:1px solid #e5e5e5;border-radius:8px">
+<tr><td style="padding:32px">
+<h1 style="margin:0 0 24px;color:#111111;font-size:22px;line-height:1.3">Acme approved your Coffee card</h1>
+<p style="margin:0 0 16px;color:#111111;font-size:16px;line-height:1.5">Hi Dana,</p>
+<p style="margin:0 0 16px;color:#111111;font-size:16px;line-height:1.5">Good news: Acme approved your request for Coffee card. They will send it to you, and you will get another email when they have.</p>
+<p style="margin:24px 0"><a href="https://dealio.info/advocate/rewards" style="display:inline-block;padding:12px 20px;border-radius:6px;background:#111111;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none">See your rewards</a></p>
+</td></tr>
+</table>
+<p style="max-width:560px;margin:16px auto 0;color:#6b6b6b;font-size:12px;line-height:1.5">You are getting this because Acme invited you to be an advocate on Dealio. <a href="https://dealio.info/unsubscribe/7c1b3e2a-0000-4000-8000-000000000000" style="color:#6b6b6b">Unsubscribe from Acme emails</a>.</p>
+</td></tr>
+</table>
+</body>
+</html>
+"
+`;
+
+exports[`renderEmail > renders REDEMPTION_APPROVED > subject 1`] = `"Acme approved your Coffee card"`;
+
+exports[`renderEmail > renders REDEMPTION_APPROVED > text 1`] = `
+"Acme approved your Coffee card
+
+Hi Dana,
+
+Good news: Acme approved your request for Coffee card. They will send it to you, and you will get another email when they have.
+
+See your rewards: https://dealio.info/advocate/rewards
+
+--
+You are getting this because Acme invited you to be an advocate on Dealio.
+Unsubscribe from Acme emails: https://dealio.info/unsubscribe/7c1b3e2a-0000-4000-8000-000000000000
+"
+`;
+
+exports[`renderEmail > renders REDEMPTION_DELIVERED > html 1`] = `
+"<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Acme sent your Coffee card</title></head>
+<body style="margin:0;padding:0;background:#f6f6f6;font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f6f6f6">
+<tr><td align="center" style="padding:32px 16px">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border:1px solid #e5e5e5;border-radius:8px">
+<tr><td style="padding:32px">
+<h1 style="margin:0 0 24px;color:#111111;font-size:22px;line-height:1.3">Acme sent your Coffee card</h1>
+<p style="margin:0 0 16px;color:#111111;font-size:16px;line-height:1.5">Hi Dana,</p>
+<p style="margin:0 0 16px;color:#111111;font-size:16px;line-height:1.5">Acme has sent your Coffee card. If it has not arrived in the next few days, reply to your contact at Acme.</p>
+<p style="margin:24px 0"><a href="https://dealio.info/advocate/rewards" style="display:inline-block;padding:12px 20px;border-radius:6px;background:#111111;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none">See your rewards</a></p>
+</td></tr>
+</table>
+<p style="max-width:560px;margin:16px auto 0;color:#6b6b6b;font-size:12px;line-height:1.5">You are getting this because Acme invited you to be an advocate on Dealio. <a href="https://dealio.info/unsubscribe/7c1b3e2a-0000-4000-8000-000000000000" style="color:#6b6b6b">Unsubscribe from Acme emails</a>.</p>
+</td></tr>
+</table>
+</body>
+</html>
+"
+`;
+
+exports[`renderEmail > renders REDEMPTION_DELIVERED > subject 1`] = `"Acme sent your Coffee card"`;
+
+exports[`renderEmail > renders REDEMPTION_DELIVERED > text 1`] = `
+"Acme sent your Coffee card
+
+Hi Dana,
+
+Acme has sent your Coffee card. If it has not arrived in the next few days, reply to your contact at Acme.
+
+See your rewards: https://dealio.info/advocate/rewards
+
+--
+You are getting this because Acme invited you to be an advocate on Dealio.
+Unsubscribe from Acme emails: https://dealio.info/unsubscribe/7c1b3e2a-0000-4000-8000-000000000000
+"
+`;
+
+exports[`renderEmail > renders REDEMPTION_REJECTED > html 1`] = `
+"<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Acme could not approve your Coffee card</title></head>
+<body style="margin:0;padding:0;background:#f6f6f6;font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f6f6f6">
+<tr><td align="center" style="padding:32px 16px">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border:1px solid #e5e5e5;border-radius:8px">
+<tr><td style="padding:32px">
+<h1 style="margin:0 0 24px;color:#111111;font-size:22px;line-height:1.3">Acme could not approve your Coffee card</h1>
+<p style="margin:0 0 16px;color:#111111;font-size:16px;line-height:1.5">Hi Dana,</p>
+<p style="margin:0 0 16px;color:#111111;font-size:16px;line-height:1.5">Acme declined your request for Coffee card. Nothing was taken: the 25 coins it would have cost are still yours to spend.</p>
+<p style="margin:0 0 16px;padding:12px 16px;border-left:3px solid #e5e5e5;color:#111111;font-size:15px;line-height:1.5;white-space:pre-wrap">Out of stock — try the voucher instead.</p>
+<p style="margin:24px 0"><a href="https://dealio.info/advocate/rewards" style="display:inline-block;padding:12px 20px;border-radius:6px;background:#111111;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none">Choose another reward</a></p>
+</td></tr>
+</table>
+<p style="max-width:560px;margin:16px auto 0;color:#6b6b6b;font-size:12px;line-height:1.5">You are getting this because Acme invited you to be an advocate on Dealio. <a href="https://dealio.info/unsubscribe/7c1b3e2a-0000-4000-8000-000000000000" style="color:#6b6b6b">Unsubscribe from Acme emails</a>.</p>
+</td></tr>
+</table>
+</body>
+</html>
+"
+`;
+
+exports[`renderEmail > renders REDEMPTION_REJECTED > subject 1`] = `"Acme could not approve your Coffee card"`;
+
+exports[`renderEmail > renders REDEMPTION_REJECTED > text 1`] = `
+"Acme could not approve your Coffee card
+
+Hi Dana,
+
+Acme declined your request for Coffee card. Nothing was taken: the 25 coins it would have cost are still yours to spend.
+
+> Out of stock — try the voucher instead.
+
+Choose another reward: https://dealio.info/advocate/rewards
+
+--
+You are getting this because Acme invited you to be an advocate on Dealio.
+Unsubscribe from Acme emails: https://dealio.info/unsubscribe/7c1b3e2a-0000-4000-8000-000000000000
+"
+`;
