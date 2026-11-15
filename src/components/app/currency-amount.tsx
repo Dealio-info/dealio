@@ -21,13 +21,21 @@ export function CurrencyAmount({
     <span
       className={cn(
         "tabular-nums",
-        size === "large" ? "text-3xl font-semibold tracking-tight" : "font-medium",
+        size === "large" ? "text-3xl font-bold tracking-tight" : "font-medium",
         className,
       )}
       // Spelled out for anyone not reading the number visually.
       aria-label={formatCurrency(amount)}
     >
-      {amount.toLocaleString()}
+      {/*
+        The large size is a balance — the number an advocate came to see — so
+        the figure carries the brand gradient. On the figure alone: gradient
+        text works by making the fill transparent, which children inherit, so
+        on the outer span it would make the unit label below invisible.
+      */}
+      <span className={size === "large" ? "text-brand-gradient" : undefined}>
+        {amount.toLocaleString()}
+      </span>
       <span className="text-muted-foreground ml-1 text-sm font-normal">
         {amount === 1 ? CURRENCY.one : CURRENCY.many}
       </span>

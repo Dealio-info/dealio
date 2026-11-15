@@ -17,12 +17,14 @@ const SEMANTIC = [
   ["border", "bg-border"],
   ["input", "bg-input"],
   ["ring", "bg-ring"],
+  ["brand-strong", "bg-brand-strong"],
 ] as const;
 
 const BRAND = [
-  ["brand-ink", "bg-brand-ink"],
-  ["brand-green", "bg-brand-green"],
-  ["brand-paper", "bg-brand-paper"],
+  ["brand-navy", "bg-brand-navy"],
+  ["brand-lime", "bg-brand-lime"],
+  ["brand-teal", "bg-brand-teal"],
+  ["brand-gold", "bg-brand-gold"],
 ] as const;
 
 const STATUS = [

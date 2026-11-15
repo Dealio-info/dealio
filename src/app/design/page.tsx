@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Section } from "./theme-pair";
 import { BrandSwatches, SemanticSwatches, StatusSwatches } from "./swatches";
+import { Logo, LogoMark } from "@/components/brand/logo";
 import { StatusBadge } from "@/components/app/status-badge";
 import { QuestCard } from "@/components/app/quest-card";
 import { RewardCard } from "@/components/app/reward-card";
@@ -88,465 +89,516 @@ const SAMPLE_REDEMPTION = {
  */
 export default function DesignPage() {
   return (
-    <div className="mx-auto max-w-5xl space-y-12 px-4 py-10">
-      <header className="space-y-2">
-        <div className="flex items-start justify-between gap-4">
-          <h1 className="text-3xl font-semibold tracking-tight">Design</h1>
-          <ThemeToggle />
-        </div>
-        <p className="text-muted-foreground max-w-prose text-sm">
-          Every token and component the interface is built from. Neutral on purpose —
-          the palette is pending, and each colour here is a role the theme redefines in
-          one place. The toggle sets the real theme; the paired panes below always show
-          both at once, so a change can be checked against the other without switching.
-        </p>
-        {/*
+    <div className="bg-hero min-h-screen">
+      <div className="mx-auto max-w-5xl space-y-12 px-4 py-10">
+        <header className="space-y-2">
+          <div className="flex items-start justify-between gap-4">
+            <h1 className="text-3xl font-semibold tracking-tight">Design</h1>
+            <ThemeToggle />
+          </div>
+          <p className="text-muted-foreground max-w-prose text-sm">
+            Every token and component the interface is built from, in the brand carried
+            over from the prototype. Each colour is a role defined once in{" "}
+            <code>globals.css</code> and checked for WCAG AA contrast in both themes.
+            The toggle sets the real theme, so this page shows exactly what the app
+            renders.
+          </p>
+          {/*
           shadcn's `base-vega` style is built on Base UI, which has no `asChild`
           — it uses a `render` prop. For a link that looks like a button,
           applying `buttonVariants` directly is simpler than either.
         */}
-        <nav className="flex flex-wrap gap-2 pt-2">
-          <Link
-            href="/app"
-            className={buttonVariants({ variant: "outline", size: "sm" })}
-          >
-            Business shell
-          </Link>
-          <Link
-            href="/advocate"
-            className={buttonVariants({ variant: "outline", size: "sm" })}
-          >
-            Advocate shell
-          </Link>
-          <Link
-            href="/sign-in"
-            className={buttonVariants({ variant: "outline", size: "sm" })}
-          >
-            Sign in
-          </Link>
-        </nav>
-      </header>
+          <nav className="flex flex-wrap gap-2 pt-2">
+            <Link
+              href="/app"
+              className={buttonVariants({ variant: "outline", size: "sm" })}
+            >
+              Business shell
+            </Link>
+            <Link
+              href="/advocate"
+              className={buttonVariants({ variant: "outline", size: "sm" })}
+            >
+              Advocate shell
+            </Link>
+            <Link
+              href="/sign-in"
+              className={buttonVariants({ variant: "outline", size: "sm" })}
+            >
+              Sign in
+            </Link>
+          </nav>
+        </header>
 
-      <Section
-        title="Semantic tokens"
-        description="What components actually reference. The theme redefines these; nothing hardcodes a colour."
-      >
-        <SemanticSwatches />
-      </Section>
+        <Section
+          title="Semantic tokens"
+          description="What components actually reference. The theme redefines these; nothing hardcodes a colour."
+        >
+          <SemanticSwatches />
+        </Section>
 
-      <Section
-        title="Brand tokens"
-        description="Sketched from the brief and not final. Used nowhere yet — deliberately, until the palette is confirmed."
-      >
-        <BrandSwatches />
-      </Section>
+        <Section
+          title="Logo"
+          description="The prototype's mark: two chevrons, lime over teal. Drawn inline from the brand tokens, so it follows the palette."
+        >
+          <div className="flex flex-wrap items-center gap-8">
+            <Logo size="large" />
+            <Logo />
+            <LogoMark className="size-8" />
+          </div>
+        </Section>
 
-      <Section
-        title="Status roles"
-        description="Five roles covering eight lifecycle statuses. Neutral now; giving these hue is the single change that makes a pipeline scannable."
-      >
-        <StatusSwatches />
-      </Section>
+        <Section
+          title="Brand tokens"
+          description="From the prototype's logo. Fixed across themes and for decoration only — gradients, glows, the logo. Text uses brand-strong or a status role, which are chosen per theme for contrast."
+        >
+          <BrandSwatches />
+        </Section>
 
-      <Section
-        title="Type scale"
-        description="One heading size per level. Pages that invent their own are how an app stops looking like one app."
-      >
-        <div className="space-y-2">
-          <p className="text-3xl font-semibold tracking-tight">Display — page title</p>
-          <p className="text-2xl font-semibold tracking-tight">Heading — section</p>
-          <p className="text-lg font-semibold tracking-tight">Subheading</p>
-          <p className="text-sm">Body — the default for most text.</p>
-          <p className="text-muted-foreground text-sm">
-            Muted body — secondary detail.
+        <Section
+          title="Effects"
+          description="The prototype's gradients, glow and depth, as named utilities. Gradient text runs between two stops that each pass contrast alone; theme-contrast.test.ts checks them."
+        >
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div className="bg-brand-gradient text-primary-foreground grid h-24 place-items-center rounded-xl font-semibold">
+              bg-brand-gradient
+            </div>
+            <div className="bg-card shadow-glow grid h-24 place-items-center rounded-xl text-sm">
+              shadow-glow
+            </div>
+            <div className="bg-card shadow-card grid h-24 place-items-center rounded-xl text-sm">
+              shadow-card
+            </div>
+          </div>
+          <p className="text-brand-gradient text-3xl font-bold tracking-tight">
+            text-brand-gradient
           </p>
-          <p className="text-muted-foreground text-xs">Caption — timestamps, hints.</p>
-          <p className="font-mono text-xs">01a198e6-c0ac-77f8 — identifiers</p>
-        </div>
-      </Section>
-
-      <Section
-        title="Lifecycle statuses"
-        description="The same status reads differently to each audience: a rep's “Sent” is an advocate's “New”."
-      >
-        <div className="space-y-3">
-          <div className="space-y-1">
-            <p className="text-muted-foreground text-xs">Business</p>
-            <div className="flex flex-wrap gap-1.5">
-              {STATUSES.map((s) => (
-                <StatusBadge key={s} status={s} />
-              ))}
-            </div>
+          <div className="bg-hero grid h-32 place-items-center rounded-xl border text-sm">
+            bg-hero
           </div>
-          <div className="space-y-1">
-            <p className="text-muted-foreground text-xs">Advocate</p>
-            <div className="flex flex-wrap gap-1.5">
-              {STATUSES.map((s) => (
-                <StatusBadge key={s} status={s} audience="advocate" />
-              ))}
-            </div>
-          </div>
-        </div>
-      </Section>
+        </Section>
 
-      <Section
-        title="Redemption statuses"
-        description="A second lifecycle, with its own copy. “Requested” exists in both and means different things, which is why the badge takes a kind rather than guessing from the value."
-      >
-        <div className="space-y-3">
-          <div className="space-y-1">
-            <p className="text-muted-foreground text-xs">Business</p>
-            <div className="flex flex-wrap gap-1.5">
-              {REDEMPTION_STATUSES.map((s) => (
-                <StatusBadge key={s} status={s} kind="redemption" />
-              ))}
-            </div>
-          </div>
-          <div className="space-y-1">
-            <p className="text-muted-foreground text-xs">Advocate</p>
-            <div className="flex flex-wrap gap-1.5">
-              {REDEMPTION_STATUSES.map((s) => (
-                <StatusBadge key={s} status={s} kind="redemption" audience="advocate" />
-              ))}
-            </div>
-          </div>
-        </div>
-      </Section>
+        <Section
+          title="Status roles"
+          description="Five roles covering eight lifecycle statuses: waiting is gold, in progress teal, done blue, success green, failed red. Every badge also carries a word, so colour is never the only signal."
+        >
+          <StatusSwatches />
+        </Section>
 
-      <Section
-        title="Currency"
-        description="The name is a placeholder and lives in one constant, so it is never spelled out in a component."
-      >
-        <div className="flex items-end gap-6">
-          <CurrencyAmount amount={1} />
-          <CurrencyAmount amount={48} />
-          <CurrencyAmount amount={1250} size="large" />
-        </div>
-      </Section>
-
-      <Section title="Buttons">
-        <div className="space-y-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <Button>Primary</Button>
-            <Button variant="secondary">Secondary</Button>
-            <Button variant="outline">Outline</Button>
-            <Button variant="ghost">Ghost</Button>
-            <Button variant="link">Link</Button>
-            <Button variant="destructive">Destructive</Button>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Button size="sm">Small</Button>
-            <Button>Default</Button>
-            <Button size="lg">Large</Button>
-            <Button disabled>Disabled</Button>
-          </div>
-        </div>
-      </Section>
-
-      <Section title="Badges">
-        <div className="flex flex-wrap gap-2">
-          <Badge>Default</Badge>
-          <Badge variant="secondary">Secondary</Badge>
-          <Badge variant="outline">Outline</Badge>
-          <Badge variant="destructive">Destructive</Badge>
-        </div>
-      </Section>
-
-      <Section
-        title="Form controls"
-        description="Native forms with server actions rather than a form library — one less dependency, and they work before hydration."
-      >
-        <div className="max-w-sm space-y-4">
-          <div className="space-y-1.5">
-            <Label htmlFor="d-email">Email</Label>
-            <Input id="d-email" type="email" placeholder="ceo@customer.com" />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="d-note">Note</Label>
-            <Textarea
-              id="d-note"
-              placeholder="Anything the reviewer should know"
-              rows={3}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="d-off">Disabled</Label>
-            <Input id="d-off" disabled placeholder="Not editable" />
-          </div>
-          <div className="flex items-center gap-3">
-            <Switch id="d-policy" />
-            <Label htmlFor="d-policy" className="text-sm font-normal">
-              Let reps send {TERMS.quest.many} without approval
-            </Label>
-          </div>
-        </div>
-      </Section>
-
-      <Section
-        title="Page header"
-        description="One component so every page agrees on where the title, the explanation and the primary action sit."
-      >
-        <PageHeader
-          title={capitalize(TERMS.quest.many)}
-          description={`Referrals, reference calls and testimonials you have asked ${TERMS.advocate.many} for.`}
-          action={<Button size="sm">New {TERMS.quest.one}</Button>}
-        />
-      </Section>
-
-      <Section title="Cards and stats">
-        <div className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Reference call for Acme</CardTitle>
-              <CardDescription>Casey Chen · Customer Inc</CardDescription>
-            </CardHeader>
-            <CardContent className="flex items-center justify-between">
-              <StatusBadge status="ACCEPTED" />
-              <CurrencyAmount amount={5} />
-            </CardContent>
-          </Card>
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <Stat label={capitalize(TERMS.advocate.many)} value="12" />
-            <Stat label="Open" value="4" />
-            <Stat label="Awarded" value={<CurrencyAmount amount={310} />} />
-            <Stat label="Influenced" value="$48,200" hint="Closed-won, last 90 days" />
-          </div>
-        </div>
-      </Section>
-
-      <Section
-        title="A quest, as the advocate sees it"
-        description="The real component, with plain buttons standing in for the form. Needs-you items lead; everything else is quieter."
-      >
-        <div className="space-y-3">
-          <QuestCard
-            title="Reference call for Acme"
-            subtitle="Jordan Reyes · Northwind"
-            status="REQUESTED"
-            rewardAmount={5}
-            actions={
-              <div className="flex flex-wrap gap-2">
-                <Button size="sm">Accept</Button>
-                <Button size="sm" variant="outline">
-                  Decline
-                </Button>
-              </div>
-            }
-          />
-          <QuestCard
-            title="Testimonial for the website"
-            status="REWARDED"
-            rewardAmount={8}
-            quiet
-          />
-        </div>
-      </Section>
-
-      <Section
-        title="A quest, as the business sees it"
-        description="The same card, in the business's words: “Marked done” rather than “Awaiting review”. Only the moves this person may make are offered — derived from the state machine, so a button never appears that the server would refuse."
-      >
-        <div className="space-y-3">
-          <QuestCard
-            audience="business"
-            title="Reference call with Globex's CTO"
-            subtitle="Reference call · Dana Whitfield · Globex"
-            status="COMPLETED"
-            rewardAmount={30}
-            actions={
-              <div className="flex flex-wrap gap-2">
-                <Button size="sm">Verify</Button>
-                <Button size="sm" variant="ghost">
-                  Cancel
-                </Button>
-              </div>
-            }
-          />
-          <QuestCard
-            audience="business"
-            title="Case study for the website"
-            subtitle="Case study · Jordan Reyes · $48,200 influenced"
-            status="REWARDED"
-            rewardAmount={50}
-            quiet
-          />
-        </div>
-      </Section>
-
-      <Section
-        title="Currency in and out"
-        description="An advocate's history, signed both ways with a real minus sign. Labels come from the quest or reward each line was for; a staff correction shows who made it but never the staff note."
-      >
-        <ul className="divide-y">
-          {[
-            { id: "a1", delta: -2, reason: "MANUAL_ADJUSTMENT", label: null },
-            { id: "a2", delta: -5, reason: "REDEMPTION", label: "Coffee card" },
-            { id: "a3", delta: 5, reason: "FULFILLMENT_FAILED", label: "Gift card" },
-            {
-              id: "a4",
-              delta: 20,
-              reason: "OPPORTUNITY_REWARD",
-              label: "Reference call with Globex",
-            },
-          ].map((item) => (
-            <ActivityRow
-              key={item.id}
-              businessName="Acme"
-              item={{
-                ...item,
-                reason: item.reason as ActivityItem["reason"],
-                createdAt: new Date("2026-03-04T09:00:00Z"),
-              }}
-            />
-          ))}
-        </ul>
-      </Section>
-
-      <Section
-        title="Advocate statuses"
-        description="Staff-only: where each advocate stands with the business."
-      >
-        <div className="flex flex-wrap gap-1.5">
-          {["INVITED", "ACTIVE", "INACTIVE"].map((s) => (
-            <StatusBadge key={s} status={s} kind="advocate" />
-          ))}
-        </div>
-      </Section>
-
-      <Section
-        title="A reward, as the advocate sees it"
-        description="The gap is stated, not just the price. “Four more and this is yours” is a reason to do another quest; a greyed-out card is only a refusal."
-      >
-        <div className="grid gap-3 sm:grid-cols-2">
-          <RewardCard
-            name="$25 coffee card"
-            description="Delivered by email within two working days"
-            cost={5}
-            balance={8}
-            action={<Button size="sm">Claim</Button>}
-          />
-          <RewardCard
-            name="$100 Lululemon gift card"
-            description="Delivered by email"
-            cost={20}
-            balance={8}
-          />
-        </div>
-      </Section>
-
-      <Section
-        title="A redemption, in a queue"
-        description="One row, both audiences. The business names the advocate and decides; the advocate reads their own history and does not. Same facts, same component."
-      >
-        <div className="space-y-3">
-          <RedemptionRow
-            redemption={SAMPLE_REDEMPTION}
-            action={
-              <div className="flex gap-2">
-                <Button size="sm">Approve</Button>
-                <Button size="sm" variant="outline">
-                  Decline
-                </Button>
-              </div>
-            }
-          />
-          <RedemptionRow
-            redemption={{
-              ...SAMPLE_REDEMPTION,
-              id: "sample-2",
-              status: "REJECTED",
-              failureReason: "That card is out of stock — try the voucher instead.",
-            }}
-            audience="advocate"
-            showAdvocate={false}
-          />
-        </div>
-      </Section>
-
-      <Section title="Tables">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>{capitalize(TERMS.advocate.one)}</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Balance</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            <TableRow>
-              <TableCell className="font-medium">Casey Chen</TableCell>
-              <TableCell>
-                <StatusBadge status="REWARDED" />
-              </TableCell>
-              <TableCell className="text-right tabular-nums">48</TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell className="font-medium">Dana Okafor</TableCell>
-              <TableCell>
-                <StatusBadge status="REQUESTED" />
-              </TableCell>
-              <TableCell className="text-right tabular-nums">0</TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-      </Section>
-
-      <Section
-        title="Empty states"
-        description="The first thing a new customer sees. Every one should name the next action."
-      >
-        <EmptyState
-          title={`No ${TERMS.advocate.many} yet`}
-          description={`Invite a customer and they will appear here once they accept.`}
-          action={<Button size="sm">Invite an {TERMS.advocate.one}</Button>}
-        />
-      </Section>
-
-      <Section title="Alerts">
-        <div className="space-y-3">
-          <Alert>
-            <AlertTitle>Waiting for approval</AlertTitle>
-            <AlertDescription>
-              An admin needs to sign this off before it reaches the {TERMS.advocate.one}
-              .
-            </AlertDescription>
-          </Alert>
-          <Alert variant="destructive">
-            <AlertTitle>Not enough balance</AlertTitle>
-            <AlertDescription>
-              This reward costs more than has been earned so far.
-            </AlertDescription>
-          </Alert>
-        </div>
-      </Section>
-
-      <Section
-        title="Loading"
-        description="Skeletons matched to the shape of what is coming, so the page does not jump."
-      >
-        <div className="space-y-3">
-          <Skeleton className="h-8 w-48" />
-          <Separator />
+        <Section
+          title="Type scale"
+          description="One heading size per level. Pages that invent their own are how an app stops looking like one app."
+        >
           <div className="space-y-2">
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-5/6" />
-            <Skeleton className="h-4 w-2/3" />
+            <p className="text-3xl font-semibold tracking-tight">
+              Display — page title
+            </p>
+            <p className="text-2xl font-semibold tracking-tight">Heading — section</p>
+            <p className="text-lg font-semibold tracking-tight">Subheading</p>
+            <p className="text-sm">Body — the default for most text.</p>
+            <p className="text-muted-foreground text-sm">
+              Muted body — secondary detail.
+            </p>
+            <p className="text-muted-foreground text-xs">
+              Caption — timestamps, hints.
+            </p>
+            <p className="font-mono text-xs">01a198e6-c0ac-77f8 — identifiers</p>
           </div>
-        </div>
-      </Section>
+        </Section>
 
-      <section className="text-muted-foreground space-y-2 border-t pt-8 text-sm">
-        <p>
-          <strong className="text-foreground">What is pending.</strong> The palette, the
-          logo, the slogan, the currency name, and whether “{TERMS.quest.one}” is the
-          right word. See <code>docs/brand-brief.md</code>.
-        </p>
-        <p>
-          <strong className="text-foreground">What will not change cheaply.</strong>{" "}
-          Layout and hierarchy — what a page leads with, how a pipeline is grouped.
-          Those are decided here, which is why this page exists to be argued with.
-        </p>
-      </section>
+        <Section
+          title="Lifecycle statuses"
+          description="The same status reads differently to each audience: a rep's “Sent” is an advocate's “New”."
+        >
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <p className="text-muted-foreground text-xs">Business</p>
+              <div className="flex flex-wrap gap-1.5">
+                {STATUSES.map((s) => (
+                  <StatusBadge key={s} status={s} />
+                ))}
+              </div>
+            </div>
+            <div className="space-y-1">
+              <p className="text-muted-foreground text-xs">Advocate</p>
+              <div className="flex flex-wrap gap-1.5">
+                {STATUSES.map((s) => (
+                  <StatusBadge key={s} status={s} audience="advocate" />
+                ))}
+              </div>
+            </div>
+          </div>
+        </Section>
+
+        <Section
+          title="Redemption statuses"
+          description="A second lifecycle, with its own copy. “Requested” exists in both and means different things, which is why the badge takes a kind rather than guessing from the value."
+        >
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <p className="text-muted-foreground text-xs">Business</p>
+              <div className="flex flex-wrap gap-1.5">
+                {REDEMPTION_STATUSES.map((s) => (
+                  <StatusBadge key={s} status={s} kind="redemption" />
+                ))}
+              </div>
+            </div>
+            <div className="space-y-1">
+              <p className="text-muted-foreground text-xs">Advocate</p>
+              <div className="flex flex-wrap gap-1.5">
+                {REDEMPTION_STATUSES.map((s) => (
+                  <StatusBadge
+                    key={s}
+                    status={s}
+                    kind="redemption"
+                    audience="advocate"
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        </Section>
+
+        <Section
+          title="Currency"
+          description="The name is a placeholder and lives in one constant, so it is never spelled out in a component."
+        >
+          <div className="flex items-end gap-6">
+            <CurrencyAmount amount={1} />
+            <CurrencyAmount amount={48} />
+            <CurrencyAmount amount={1250} size="large" />
+          </div>
+        </Section>
+
+        <Section title="Buttons">
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <Button>Primary</Button>
+              <Button variant="secondary">Secondary</Button>
+              <Button variant="outline">Outline</Button>
+              <Button variant="ghost">Ghost</Button>
+              <Button variant="link">Link</Button>
+              <Button variant="destructive">Destructive</Button>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button size="sm">Small</Button>
+              <Button>Default</Button>
+              <Button size="lg">Large</Button>
+              <Button disabled>Disabled</Button>
+            </div>
+          </div>
+        </Section>
+
+        <Section title="Badges">
+          <div className="flex flex-wrap gap-2">
+            <Badge>Default</Badge>
+            <Badge variant="secondary">Secondary</Badge>
+            <Badge variant="outline">Outline</Badge>
+            <Badge variant="destructive">Destructive</Badge>
+          </div>
+        </Section>
+
+        <Section
+          title="Form controls"
+          description="Native forms with server actions rather than a form library — one less dependency, and they work before hydration."
+        >
+          <div className="max-w-sm space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="d-email">Email</Label>
+              <Input id="d-email" type="email" placeholder="ceo@customer.com" />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="d-note">Note</Label>
+              <Textarea
+                id="d-note"
+                placeholder="Anything the reviewer should know"
+                rows={3}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="d-off">Disabled</Label>
+              <Input id="d-off" disabled placeholder="Not editable" />
+            </div>
+            <div className="flex items-center gap-3">
+              <Switch id="d-policy" />
+              <Label htmlFor="d-policy" className="text-sm font-normal">
+                Let reps send {TERMS.quest.many} without approval
+              </Label>
+            </div>
+          </div>
+        </Section>
+
+        <Section
+          title="Page header"
+          description="One component so every page agrees on where the title, the explanation and the primary action sit."
+        >
+          <PageHeader
+            title={capitalize(TERMS.quest.many)}
+            description={`Referrals, reference calls and testimonials you have asked ${TERMS.advocate.many} for.`}
+            action={<Button size="sm">New {TERMS.quest.one}</Button>}
+          />
+        </Section>
+
+        <Section title="Cards and stats">
+          <div className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Reference call for Acme</CardTitle>
+                <CardDescription>Casey Chen · Customer Inc</CardDescription>
+              </CardHeader>
+              <CardContent className="flex items-center justify-between">
+                <StatusBadge status="ACCEPTED" />
+                <CurrencyAmount amount={5} />
+              </CardContent>
+            </Card>
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+              <Stat label={capitalize(TERMS.advocate.many)} value="12" />
+              <Stat label="Open" value="4" />
+              <Stat label="Awarded" value={<CurrencyAmount amount={310} />} />
+              <Stat
+                emphasis
+                label="Influenced"
+                value="$48,200"
+                hint="Closed-won, last 90 days"
+              />
+            </div>
+          </div>
+        </Section>
+
+        <Section
+          title="A quest, as the advocate sees it"
+          description="The real component, with plain buttons standing in for the form. Needs-you items lead; everything else is quieter."
+        >
+          <div className="space-y-3">
+            <QuestCard
+              title="Reference call for Acme"
+              subtitle="Jordan Reyes · Northwind"
+              status="REQUESTED"
+              rewardAmount={5}
+              actions={
+                <div className="flex flex-wrap gap-2">
+                  <Button size="sm">Accept</Button>
+                  <Button size="sm" variant="outline">
+                    Decline
+                  </Button>
+                </div>
+              }
+            />
+            <QuestCard
+              title="Testimonial for the website"
+              status="REWARDED"
+              rewardAmount={8}
+              quiet
+            />
+          </div>
+        </Section>
+
+        <Section
+          title="A quest, as the business sees it"
+          description="The same card, in the business's words: “Marked done” rather than “Awaiting review”. Only the moves this person may make are offered — derived from the state machine, so a button never appears that the server would refuse."
+        >
+          <div className="space-y-3">
+            <QuestCard
+              audience="business"
+              title="Reference call with Globex's CTO"
+              subtitle="Reference call · Dana Whitfield · Globex"
+              status="COMPLETED"
+              rewardAmount={30}
+              actions={
+                <div className="flex flex-wrap gap-2">
+                  <Button size="sm">Verify</Button>
+                  <Button size="sm" variant="ghost">
+                    Cancel
+                  </Button>
+                </div>
+              }
+            />
+            <QuestCard
+              audience="business"
+              title="Case study for the website"
+              subtitle="Case study · Jordan Reyes · $48,200 influenced"
+              status="REWARDED"
+              rewardAmount={50}
+              quiet
+            />
+          </div>
+        </Section>
+
+        <Section
+          title="Currency in and out"
+          description="An advocate's history, signed both ways with a real minus sign. Labels come from the quest or reward each line was for; a staff correction shows who made it but never the staff note."
+        >
+          <ul className="divide-y">
+            {[
+              { id: "a1", delta: -2, reason: "MANUAL_ADJUSTMENT", label: null },
+              { id: "a2", delta: -5, reason: "REDEMPTION", label: "Coffee card" },
+              { id: "a3", delta: 5, reason: "FULFILLMENT_FAILED", label: "Gift card" },
+              {
+                id: "a4",
+                delta: 20,
+                reason: "OPPORTUNITY_REWARD",
+                label: "Reference call with Globex",
+              },
+            ].map((item) => (
+              <ActivityRow
+                key={item.id}
+                businessName="Acme"
+                item={{
+                  ...item,
+                  reason: item.reason as ActivityItem["reason"],
+                  createdAt: new Date("2026-03-04T09:00:00Z"),
+                }}
+              />
+            ))}
+          </ul>
+        </Section>
+
+        <Section
+          title="Advocate statuses"
+          description="Staff-only: where each advocate stands with the business."
+        >
+          <div className="flex flex-wrap gap-1.5">
+            {["INVITED", "ACTIVE", "INACTIVE"].map((s) => (
+              <StatusBadge key={s} status={s} kind="advocate" />
+            ))}
+          </div>
+        </Section>
+
+        <Section
+          title="A reward, as the advocate sees it"
+          description="The gap is stated, not just the price. “Four more and this is yours” is a reason to do another quest; a greyed-out card is only a refusal."
+        >
+          <div className="grid gap-3 sm:grid-cols-2">
+            <RewardCard
+              name="$25 coffee card"
+              description="Delivered by email within two working days"
+              cost={5}
+              balance={8}
+              action={<Button size="sm">Claim</Button>}
+            />
+            <RewardCard
+              name="$100 Lululemon gift card"
+              description="Delivered by email"
+              cost={20}
+              balance={8}
+            />
+          </div>
+        </Section>
+
+        <Section
+          title="A redemption, in a queue"
+          description="One row, both audiences. The business names the advocate and decides; the advocate reads their own history and does not. Same facts, same component."
+        >
+          <div className="space-y-3">
+            <RedemptionRow
+              redemption={SAMPLE_REDEMPTION}
+              action={
+                <div className="flex gap-2">
+                  <Button size="sm">Approve</Button>
+                  <Button size="sm" variant="outline">
+                    Decline
+                  </Button>
+                </div>
+              }
+            />
+            <RedemptionRow
+              redemption={{
+                ...SAMPLE_REDEMPTION,
+                id: "sample-2",
+                status: "REJECTED",
+                failureReason: "That card is out of stock — try the voucher instead.",
+              }}
+              audience="advocate"
+              showAdvocate={false}
+            />
+          </div>
+        </Section>
+
+        <Section title="Tables">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{capitalize(TERMS.advocate.one)}</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Balance</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow>
+                <TableCell className="font-medium">Casey Chen</TableCell>
+                <TableCell>
+                  <StatusBadge status="REWARDED" />
+                </TableCell>
+                <TableCell className="text-right tabular-nums">48</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell className="font-medium">Dana Okafor</TableCell>
+                <TableCell>
+                  <StatusBadge status="REQUESTED" />
+                </TableCell>
+                <TableCell className="text-right tabular-nums">0</TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </Section>
+
+        <Section
+          title="Empty states"
+          description="The first thing a new customer sees. Every one should name the next action."
+        >
+          <EmptyState
+            title={`No ${TERMS.advocate.many} yet`}
+            description={`Invite a customer and they will appear here once they accept.`}
+            action={<Button size="sm">Invite an {TERMS.advocate.one}</Button>}
+          />
+        </Section>
+
+        <Section title="Alerts">
+          <div className="space-y-3">
+            <Alert>
+              <AlertTitle>Waiting for approval</AlertTitle>
+              <AlertDescription>
+                An admin needs to sign this off before it reaches the{" "}
+                {TERMS.advocate.one}.
+              </AlertDescription>
+            </Alert>
+            <Alert variant="destructive">
+              <AlertTitle>Not enough balance</AlertTitle>
+              <AlertDescription>
+                This reward costs more than has been earned so far.
+              </AlertDescription>
+            </Alert>
+          </div>
+        </Section>
+
+        <Section
+          title="Loading"
+          description="Skeletons matched to the shape of what is coming, so the page does not jump."
+        >
+          <div className="space-y-3">
+            <Skeleton className="h-8 w-48" />
+            <Separator />
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-5/6" />
+              <Skeleton className="h-4 w-2/3" />
+            </div>
+          </div>
+        </Section>
+
+        <section className="text-muted-foreground space-y-2 border-t pt-8 text-sm">
+          <p>
+            <strong className="text-foreground">What is pending.</strong> The palette,
+            the logo, the slogan, the currency name, and whether “{TERMS.quest.one}” is
+            the right word. See <code>docs/brand-brief.md</code>.
+          </p>
+          <p>
+            <strong className="text-foreground">What will not change cheaply.</strong>{" "}
+            Layout and hierarchy — what a page leads with, how a pipeline is grouped.
+            Those are decided here, which is why this page exists to be argued with.
+          </p>
+        </section>
+      </div>
     </div>
   );
 }

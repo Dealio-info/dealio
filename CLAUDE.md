@@ -134,6 +134,35 @@ and outcome handlers use deterministic event IDs so retries are safe.
 Next.js 16 + React 19 + TypeScript + Tailwind 4, shadcn/ui on Base UI, Vitest 5, ESLint 9 (flat
 config) with the database boundary, and Prisma 7 with the full domain schema migrated.
 
+**Visual pass (2026-11-15): the prototype's brand, under a contrast test.** Navy, lime, teal and gold
+from the logo; gradients, glow and depth as named utilities; the logo as an inline component.
+
+- **`theme-contrast.test.ts` reads `globals.css` and fails on any pair below WCAG AA** — text 4.5:1;
+  focus rings and input borders 3:1 — in both themes, with status badges checked as drawn (tinted
+  text on a tinted card). It found five failures in the old neutral theme. Add any new foreground /
+  background pairing a component renders to its `PAIRS` list. The maths is `src/lib/contrast.ts`;
+  `email/theme.test.ts` holds email colours to the same bar.
+- **Brand constants (`brand-navy|lime|teal|gold`) are decoration only.** Text uses `brand-strong` or a
+  status role, chosen per theme: lime on white is ~1.7:1. `primary` is lime in both themes _with navy
+  text_ (~10:1), which is why the `link` button variant uses `text-brand-strong`, not `text-primary`.
+- **Effects are utilities, never spelled out in a component:** `bg-hero`, `bg-brand-gradient`,
+  `text-brand-gradient`, `shadow-card`, `shadow-glow`, `shadow-button`. Use the gradient and glow for
+  the one thing on a page that matters — the hero, the primary action, the number a page exists to
+  show — or they stop meaning anything.
+- **Shadows must be registered in `@theme inline` (`--shadow-x: var(--elevation-x)`), not written as
+  `@utility … { box-shadow }`.** Tailwind draws focus rings and `ring-*` borders with box-shadow too;
+  a utility that sets box-shadow outright erases them wherever it wins. Registered, Tailwind composes
+  the two.
+- **Focus rings are full strength.** shadcn ships `ring-ring/50`, which blends to ~2:1 on white in the
+  light theme; every one was changed to `ring-ring`, and the contrast test fails if a faded ring
+  comes back with the next `shadcn add`.
+- **Gradient text makes the fill transparent, and children inherit it.** Put `text-brand-gradient`
+  on the text itself, never on a wrapper with differently coloured children — on `CurrencyAmount` it
+  would have made the unit label invisible.
+- **Motion only under `motion-safe:`.** The one hover lift respects reduced-motion settings.
+- **`EntryFrame`** (`components/brand/`) frames the pages people arrive at from outside — sign-in,
+  invite, unsubscribe — so the first screens an advocate sees cannot drift apart.
+
 **The root URL (`/`)** was the Task 1 scaffold until after the first Vercel deploy. It is now a
 doorway: a signed-in person is redirected by `homeFor` in `src/lib/home.ts` — `/app` if they are
 staff anywhere, else `/advocate`, else nothing — and everyone else gets a plain landing page. This

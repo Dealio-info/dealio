@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { isActive } from "./active";
 import { ThemeToggle } from "./theme-toggle";
+import { Logo } from "@/components/brand/logo";
 
 /**
  * `href` borrows Link's own type rather than using `string`. Next 16 checks
@@ -46,14 +47,15 @@ export function NavShell({
   const hrefs = items.map((i) => String(i.href));
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <header className="bg-background/95 supports-[backdrop-filter]:bg-background/80 sticky top-0 z-40 border-b backdrop-blur">
+    <div className="bg-hero flex min-h-screen flex-col">
+      <header className="bg-background/95 supports-[backdrop-filter]:bg-background/80 sticky top-0 z-40 backdrop-blur">
         <div className="mx-auto flex h-14 w-full max-w-6xl items-center gap-4 px-4">
           <Link
             href={home}
-            className="hover:text-foreground/80 font-semibold tracking-tight transition-colors"
+            aria-label="Dealio home"
+            className="rounded-md transition-opacity hover:opacity-80"
           >
-            Dealio
+            <Logo />
           </Link>
           {badge}
           <nav
@@ -71,8 +73,8 @@ export function NavShell({
                   className={cn(
                     "rounded-md px-3 py-1.5 text-sm whitespace-nowrap transition-colors",
                     active
-                      ? "bg-secondary text-secondary-foreground font-medium"
-                      : "text-muted-foreground hover:text-foreground hover:bg-secondary/60",
+                      ? "bg-accent text-accent-foreground font-medium"
+                      : "text-muted-foreground hover:text-foreground hover:bg-accent/60",
                   )}
                 >
                   {item.label}
@@ -83,6 +85,8 @@ export function NavShell({
           <ThemeToggle />
           {trailing}
         </div>
+        {/* The brand's signature, kept to a hairline so it never competes. */}
+        <div aria-hidden="true" className="bg-brand-gradient h-px opacity-70" />
       </header>
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">{children}</main>
     </div>

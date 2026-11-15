@@ -7,74 +7,106 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Brand direction from the product brief, not final: deep navy / near-black,
- * vibrant green, off-white. Namespaced under `brand-` so these never collide
- * with shadcn's semantic tokens — an un-namespaced `--color-accent` here was
- * silently overridden by shadcn's `@theme inline` block below.
+ * Brand constants, from the prototype's logo: two chevrons, lime over teal, on
+ * deep navy, with gold as a sparing accent. These do not change with the theme
+ * — they are the brand — so they live in `@theme` and are for decoration: the
+ * logo, gradients, glows. Never put text in them directly; text needs a colour
+ * chosen per theme for contrast, which is what `brand-strong` and the status
+ * roles below are for.
  *
- * Use these for brand surfaces (`bg-brand-green`), and shadcn's semantic
- * tokens (`bg-background`, `text-foreground`, `bg-primary`) for UI chrome, so
- * component theming stays consistent.
+ * Namespaced `brand-` so they never collide with shadcn's semantic tokens — an
+ * un-namespaced `--color-accent` here was once silently overridden by the
+ * `@theme inline` block below.
  */
 @theme {
-  --color-brand-ink: #0b1220;
-  --color-brand-green: #16c172;
-  --color-brand-paper: #f7f7f5;
+  --color-brand-navy: hsl(215 45% 12%);
+  --color-brand-lime: hsl(95 60% 55%);
+  --color-brand-teal: hsl(175 50% 45%);
+  --color-brand-gold: hsl(38 92% 50%);
 }
 
+/*
+ * The theme, as roles. Light first, dark under `.dark`.
+ *
+ * Every pairing the components render is checked for WCAG AA contrast by
+ * `theme-contrast.test.ts`, which reads this file — change a value, run the
+ * test, and it names any pair that broke and by how much.
+ *
+ * The brand in a light theme: navy text instead of navy surfaces, lime as the
+ * main button's fill (with navy text, ~10:1), and darker greens and teals
+ * wherever the brand colour carries text, because lime on white is ~1.7:1.
+ * The dark theme is the prototype's own.
+ */
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
+  --background: hsl(210 40% 98%);
+  --foreground: hsl(215 45% 12%);
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(215 45% 12%);
+  --popover: hsl(0 0% 100%);
+  --popover-foreground: hsl(215 45% 12%);
+  --primary: hsl(95 60% 55%);
+  --primary-foreground: hsl(215 45% 12%);
+  --secondary: hsl(214 32% 93%);
+  --secondary-foreground: hsl(215 45% 12%);
+  --muted: hsl(214 32% 94%);
+  --muted-foreground: hsl(215 20% 36%);
+  --accent: hsl(95 55% 92%);
+  --accent-foreground: hsl(215 45% 12%);
+  --destructive: hsl(0 72% 42%);
+  --border: hsl(214 28% 88%);
+  --input: hsl(215 16% 52%);
+  --ring: hsl(175 80% 26%);
+  --chart-1: hsl(95 60% 40%);
+  --chart-2: hsl(175 60% 32%);
+  --chart-3: hsl(38 92% 45%);
+  --chart-4: hsl(205 70% 45%);
+  --chart-5: hsl(215 30% 40%);
+  --radius: 0.75rem;
 
   /*
-   * Lifecycle status colour, as roles rather than hues.
-   *
-   * Defined here and under `.dark` rather than in `@theme`, because a fixed
-   * value cannot be legible on both a white and a near-black background — the
-   * first version put them in `@theme` and "Rewarded" was invisible in dark
-   * mode. Anything that must stay readable across themes belongs with the other
-   * theme-responsive variables, not with the brand constants.
-   *
-   * Deliberately neutral apart from `failed`. Eight statuses in five greys are
-   * legible but not scannable, and making them scannable is a palette decision
-   * nobody has taken yet — `docs/brand-brief.md` asks for it. Giving these hue
-   * is a change to this file alone.
+   * The brand colour, safe for text: links, an emphasised figure. Lime itself
+   * is decoration only on a light background.
    */
-  --status-waiting: oklch(0.556 0 0);
-  --status-active: oklch(0.44 0 0);
-  --status-done: oklch(0.33 0 0);
-  --status-success: oklch(0.205 0 0);
-  --status-failed: oklch(0.577 0.245 27.325);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --brand-strong: hsl(95 70% 26%);
+  /* Gradient text runs between two readable stops, never through lime itself. */
+  --gradient-text-from: hsl(95 70% 27%);
+  --gradient-text-to: hsl(175 80% 25%);
+
+  /* Depth. Soft on light, where heavy shadows look dirty. */
+  --elevation-card:
+    0 1px 2px hsl(215 45% 12% / 0.04), 0 8px 24px -12px hsl(215 45% 12% / 0.12);
+  --elevation-glow:
+    0 0 0 1px hsl(95 60% 55% / 0.25), 0 8px 32px -8px hsl(95 60% 45% / 0.35);
+  --elevation-button: 0 4px 14px -4px hsl(95 60% 40% / 0.45);
+  /* The hero: faint lime and teal light on the page background. */
+  --hero:
+    radial-gradient(60rem 30rem at 15% -10%, hsl(95 60% 55% / 0.22), transparent 60%),
+    radial-gradient(50rem 30rem at 90% 0%, hsl(175 50% 45% / 0.18), transparent 60%),
+    var(--background);
+
+  /*
+   * Lifecycle status, as roles rather than hues: waiting is gold, in progress
+   * is teal, done is blue, success is the brand green, failed is red. Each is a
+   * shade that reads as text on its own tint (checked), and the badge always
+   * carries a word, so colour is never the only signal.
+   *
+   * Here and under `.dark`, not in `@theme`: a fixed value cannot be legible on
+   * both a white and a navy background — "Rewarded" was once invisible in dark
+   * mode for exactly that reason.
+   */
+  --status-waiting: hsl(32 95% 30%);
+  --status-active: hsl(175 85% 24%);
+  --status-done: hsl(205 80% 34%);
+  --status-success: hsl(95 70% 25%);
+  --status-failed: hsl(0 72% 40%);
+  --sidebar: hsl(0 0% 100%);
+  --sidebar-foreground: hsl(215 45% 12%);
+  --sidebar-primary: hsl(95 60% 55%);
+  --sidebar-primary-foreground: hsl(215 45% 12%);
+  --sidebar-accent: hsl(95 55% 92%);
+  --sidebar-accent-foreground: hsl(215 45% 12%);
+  --sidebar-border: hsl(214 28% 88%);
+  --sidebar-ring: hsl(175 80% 26%);
 }
 
 /*
@@ -119,6 +151,17 @@
   --color-status-done: var(--status-done);
   --color-status-success: var(--status-success);
   --color-status-failed: var(--status-failed);
+  --color-brand-strong: var(--brand-strong);
+  /*
+   * Shadows go through Tailwind's theme, not hand-written utilities. Tailwind
+   * draws focus rings and `ring-*` borders with box-shadow too, and a utility
+   * that sets box-shadow outright erases them: the first version of these did,
+   * and keyboard focus vanished from every primary button. Registered here,
+   * `shadow-card` sets only --tw-shadow and composes with the ring.
+   */
+  --shadow-card: var(--elevation-card);
+  --shadow-glow: var(--elevation-glow);
+  --shadow-button: var(--elevation-button);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -131,57 +174,111 @@
  ---break---
  */
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  --background: hsl(215 45% 10%);
+  --foreground: hsl(210 40% 98%);
+  --card: hsl(215 42% 14%);
+  --card-foreground: hsl(210 40% 98%);
+  --popover: hsl(215 42% 14%);
+  --popover-foreground: hsl(210 40% 98%);
+  --primary: hsl(95 60% 55%);
+  --primary-foreground: hsl(215 45% 12%);
+  --secondary: hsl(215 35% 20%);
+  --secondary-foreground: hsl(210 40% 98%);
+  --muted: hsl(215 35% 18%);
+  --muted-foreground: hsl(215 22% 72%);
+  --accent: hsl(215 35% 22%);
+  --accent-foreground: hsl(210 40% 98%);
+  --destructive: hsl(0 85% 70%);
+  --border: hsl(215 30% 22%);
+  --input: hsl(215 22% 46%);
+  --ring: hsl(95 60% 55%);
 
-  /* Mirrored: light enough to read on a near-black surface. */
-  --status-waiting: oklch(0.65 0 0);
-  --status-active: oklch(0.75 0 0);
-  --status-done: oklch(0.85 0 0);
-  --status-success: oklch(0.95 0 0);
-  --status-failed: oklch(0.704 0.191 22.216);
+  --brand-strong: hsl(95 60% 60%);
+  --gradient-text-from: hsl(95 60% 60%);
+  --gradient-text-to: hsl(175 55% 55%);
 
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  /* The prototype's depth: deep shadows, and a lime glow that reads on navy. */
+  --elevation-card:
+    0 1px 0 hsl(0 0% 100% / 0.04) inset, 0 4px 24px hsl(215 45% 4% / 0.45);
+  --elevation-glow: 0 0 0 1px hsl(95 60% 55% / 0.25), 0 0 40px hsl(95 60% 55% / 0.18);
+  --elevation-button: 0 4px 14px hsl(95 60% 55% / 0.35);
+  --hero:
+    radial-gradient(60rem 30rem at 15% -10%, hsl(95 60% 55% / 0.16), transparent 60%),
+    radial-gradient(50rem 30rem at 90% 0%, hsl(175 50% 45% / 0.18), transparent 60%),
+    linear-gradient(180deg, hsl(215 40% 14%), var(--background) 40rem);
+
+  /* Mirrored: light enough to read on navy. */
+  --status-waiting: hsl(38 92% 62%);
+  --status-active: hsl(175 60% 55%);
+  --status-done: hsl(205 85% 72%);
+  --status-success: hsl(95 60% 60%);
+  --status-failed: hsl(0 85% 72%);
+
+  --chart-1: hsl(95 60% 55%);
+  --chart-2: hsl(175 50% 50%);
+  --chart-3: hsl(38 92% 55%);
+  --chart-4: hsl(205 80% 65%);
+  --chart-5: hsl(215 30% 60%);
+  --sidebar: hsl(215 42% 14%);
+  --sidebar-foreground: hsl(210 40% 98%);
+  --sidebar-primary: hsl(95 60% 55%);
+  --sidebar-primary-foreground: hsl(215 45% 12%);
+  --sidebar-accent: hsl(215 35% 22%);
+  --sidebar-accent-foreground: hsl(210 40% 98%);
+  --sidebar-border: hsl(215 30% 22%);
+  --sidebar-ring: hsl(95 60% 55%);
 }
 /*
  ---break---
  */
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border outline-ring;
   }
   body {
     @apply bg-background text-foreground;
   }
   html {
     @apply font-sans;
+  }
+}
+
+/*
+ * The prototype's effects, as named utilities so components never spell out a
+ * gradient or a shadow. Each reads theme variables, so it adapts to light and
+ * dark, and each degrades to something plain where unsupported.
+ */
+@utility bg-hero {
+  background: var(--hero);
+}
+
+/* Lime to teal: the logo's two chevrons. Decoration, or navy text on top. */
+@utility bg-brand-gradient {
+  background-image: linear-gradient(
+    135deg,
+    var(--color-brand-lime),
+    var(--color-brand-teal)
+  );
+}
+
+/*
+ * Gradient text between two stops that each pass contrast on their own. The
+ * solid `color` is what shows if `background-clip: text` is unsupported, and
+ * what forced-colours mode uses.
+ */
+@utility text-brand-gradient {
+  color: var(--brand-strong);
+  background-image: linear-gradient(
+    135deg,
+    var(--gradient-text-from),
+    var(--gradient-text-to)
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+
+  @media (forced-colors: active) {
+    -webkit-text-fill-color: currentColor;
+    background-image: none;
   }
 }

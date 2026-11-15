@@ -304,6 +304,27 @@ is the problem.
 
 ## Log
 
+**2026-11-15 — The prototype's look, carried over and tested.**
+The MVP was built theme-neutral so the palette could land in one file. It has: navy, lime, teal and
+gold from the prototype's logo, its gradients, glow and depth, and the logo itself. Asked for by the
+developer ahead of the business lead's brand brief; the brief is now a review of an applied palette
+rather than a blank page, and anything in it can still change in the same one file.
+
+Decisions:
+
+- **Accessibility is a test, not a review step.** `theme-contrast.test.ts` holds every text pairing
+  to 4.5:1 and focus rings and form borders to 3:1, in both themes. The neutral theme it replaced
+  failed five of those checks — faint hint text on panels, an invisible focus ring, form fields with
+  no visible edge, two unreadable badges.
+- **Both themes stay, and "system" stays the default**, respecting the visitor's setting. Dark is the
+  prototype's own look; making it the default is a one-line change if the business lead wants it.
+- **Light mode is the brand on white, not a washed-out dark mode**: navy text, the lime button with
+  navy text, and darker shades of the brand wherever colour carries meaning.
+- **Status colours have hue now** (gold waiting, teal in progress, blue done, green success, red
+  failed), and every badge keeps its word, so colour is never the only signal.
+- **Emails match**: navy text, a lime button with navy text, a lime-to-teal bar. Plain-text versions
+  are unchanged.
+
 **2026-11-15 — The root URL, after the first deploy.**
 The deployed site's front page was still the Task 1 scaffold, and signing in without a destination
 lands there. `/` now sends a signed-in person to their own side — the business side if they are staff

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { currentIdentity } from "@/server/auth";
 import { homeFor } from "@/lib/home";
 import { ThemeToggle } from "@/components/nav/theme-toggle";
+import { Logo, LogoMark } from "@/components/brand/logo";
 import { SignOutButton } from "@/components/nav/sign-out-button";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,10 +29,10 @@ export default async function Home() {
   if (home) redirect(home);
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <header className="border-b">
+    <div className="bg-hero flex min-h-screen flex-col">
+      <header>
         <div className="mx-auto flex h-14 w-full max-w-5xl items-center gap-4 px-4">
-          <span className="font-semibold tracking-tight">Dealio</span>
+          <Logo />
           <div className="ml-auto flex items-center gap-2">
             <ThemeToggle />
             {identity ? (
@@ -43,6 +44,7 @@ export default async function Home() {
             )}
           </div>
         </div>
+        <div aria-hidden="true" className="bg-brand-gradient h-px opacity-70" />
       </header>
 
       <main className="mx-auto w-full max-w-5xl flex-1 px-4">
@@ -60,8 +62,9 @@ export default async function Home() {
         )}
 
         <section className="max-w-3xl py-20 sm:py-28">
-          <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">
-            Turn happy customers into a repeatable sales advantage.
+          <h1 className="text-4xl font-bold tracking-tight sm:text-6xl">
+            Turn happy customers into a{" "}
+            <span className="text-brand-gradient">repeatable sales advantage.</span>
           </h1>
           <p className="text-muted-foreground mt-6 max-w-2xl text-lg">
             Dealio is a customer advocacy platform for B2B SaaS sales teams. Ask your
@@ -75,7 +78,13 @@ export default async function Home() {
           </p>
           {!identity && (
             <div className="mt-10 flex flex-wrap items-center gap-3">
-              <Link href="/sign-in" className={buttonVariants({ size: "lg" })}>
+              <Link
+                href="/sign-in"
+                className={buttonVariants({
+                  size: "lg",
+                  className: "shadow-glow px-6",
+                })}
+              >
                 Sign in
               </Link>
               <p className="text-muted-foreground text-sm">
@@ -86,7 +95,7 @@ export default async function Home() {
         </section>
 
         <section className="grid gap-4 pb-16 md:grid-cols-2">
-          <Card>
+          <Card className="motion-safe:hover:shadow-glow transition-shadow">
             <CardHeader>
               <CardTitle>For sales teams</CardTitle>
             </CardHeader>
@@ -108,7 +117,7 @@ export default async function Home() {
               </ul>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="motion-safe:hover:shadow-glow transition-shadow">
             <CardHeader>
               <CardTitle>For your customers</CardTitle>
             </CardHeader>
@@ -147,8 +156,13 @@ export default async function Home() {
                 `The customer claims a ${TERMS.reward.one}; the company approves and sends it.`,
               ],
             ].map(([step, text], i) => (
-              <li key={step} className="space-y-1">
-                <p className="text-muted-foreground text-sm tabular-nums">{i + 1}</p>
+              <li key={step} className="space-y-2">
+                <p
+                  aria-hidden="true"
+                  className="bg-brand-gradient text-primary-foreground grid size-8 place-items-center rounded-full text-sm font-bold tabular-nums"
+                >
+                  {i + 1}
+                </p>
                 <p className="font-medium">{step}</p>
                 <p className="text-muted-foreground text-sm">{text}</p>
               </li>
@@ -159,6 +173,7 @@ export default async function Home() {
 
       <footer className="border-t">
         <div className="text-muted-foreground mx-auto flex h-14 w-full max-w-5xl items-center px-4 text-sm">
+          <LogoMark className="mr-2 size-4" />
           Dealio
         </div>
       </footer>
